@@ -4,7 +4,7 @@
 
 ## Lineage
 
-This package is derived from [sbooth/CXXTagLib](https://github.com/sbooth/CXXTagLib), which repackages the [taglib/taglib](https://github.com/taglib/taglib) C++ library for SPM consumption. spfk-taglib is an independent fork with its own versioning — it does not track sbooth/CXXTagLib releases.
+This package is inspired by [sbooth/CXXTagLib](https://github.com/sbooth/CXXTagLib), which repackages the [taglib/taglib](https://github.com/taglib/taglib) C++ library for SPM consumption. spfk-taglib is an independent fork with its own versioning — it does not track sbooth/CXXTagLib releases.
 
 ## Additions
 
@@ -43,3 +43,4 @@ targets: [
 ## License
 
 TagLib is distributed under the [LGPL](https://www.gnu.org/licenses/lgpl-2.1.html) and [MPL](https://www.mozilla.org/en-US/MPL/) licenses.
+
