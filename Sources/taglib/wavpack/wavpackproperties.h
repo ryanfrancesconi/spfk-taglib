@@ -30,8 +30,8 @@
 #ifndef TAGLIB_WVPROPERTIES_H
 #define TAGLIB_WVPROPERTIES_H
 
-#include <taglib/taglib_export.h>
-#include <taglib/audioproperties.h>
+#include "taglib_export.h"
+#include "audioproperties.h"
 
 namespace TagLib {
 
@@ -95,6 +95,11 @@ namespace TagLib {
        * Returns whether or not the file is lossless encoded.
        */
       bool isLossless() const;
+
+      /*!
+       * Returns whether or not the file is DSD (not PCM)
+       */
+      bool isDsd() const;
 
       /*!
        * Returns the total number of audio samples in file.

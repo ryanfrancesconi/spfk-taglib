@@ -1,7 +1,7 @@
 /***************************************************************************
     copyright            : (C) 2002 - 2008 by Scott Wheeler
     email                : wheeler@kde.org
-***************************************************************************/
+ ***************************************************************************/
 
 /***************************************************************************
  *   This library is free software; you can redistribute it and/or modify  *
@@ -28,50 +28,53 @@
 #include <array>
 #include <bitset>
 
-#include "id3v2synchdata.h"
-#include "id3v2tag.h"
 #include "tdebug.h"
-#include "textidentificationframe.h"
-#include "tpropertymap.h"
 #include "tstringlist.h"
 #include "tzlib.h"
-#include "unknownframe.h"
+#include "tpropertymap.h"
+#include "id3v2tag.h"
+#include "id3v2synchdata.h"
+#include "frames/textidentificationframe.h"
+#include "frames/unknownframe.h"
 
 using namespace TagLib;
 using namespace ID3v2;
 
-class Frame::FramePrivate {
+class Frame::FramePrivate
+{
 public:
   FramePrivate() = default;
-  ~FramePrivate() { delete header; }
+  ~FramePrivate()
+  {
+    delete header;
+  }
 
   FramePrivate(const FramePrivate &) = delete;
   FramePrivate &operator=(const FramePrivate &) = delete;
 
-  Frame::Header *header{nullptr};
+  Frame::Header *header { nullptr };
 };
 
-namespace {
-bool isValidFrameID(const ByteVector &frameID) {
-  if (frameID.size() != 4) {
-    return false;
-  }
+namespace
+{
+  bool isValidFrameID(const ByteVector &frameID)
+  {
+    if(frameID.size() != 4)
+      return false;
 
-  return std::none_of(frameID.begin(), frameID.end(), [](auto c) {
-    return (c < 'A' || c > 'Z') && (c < '0' || c > '9');
-  });
-}
-} // namespace
+    return std::none_of(frameID.begin(), frameID.end(),
+      [](auto c) { return (c < 'A' || c > 'Z') && (c < '0' || c > '9'); });
+  }
+}  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
 // static methods
 ////////////////////////////////////////////////////////////////////////////////
 
-ByteVector Frame::textDelimiter(String::Type t) {
-  if (t == String::UTF16 || t == String::UTF16BE || t == String::UTF16LE) {
+ByteVector Frame::textDelimiter(String::Type t)
+{
+  if(t == String::UTF16 || t == String::UTF16BE || t == String::UTF16LE)
     return ByteVector(2, '\0');
-  }
-
   return ByteVector(1, '\0');
 }
 
@@ -84,45 +87,58 @@ const String Frame::urlPrefix("URL:");
 // public members
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned int Frame::headerSize() const { return d->header->size(); }
+unsigned int Frame::headerSize() const
+{
+  return d->header->size();
+}
 
 Frame::~Frame() = default;
 
-ByteVector Frame::frameID() const {
-  if (d->header) {
+ByteVector Frame::frameID() const
+{
+  if(d->header)
     return d->header->frameID();
-  }
-
   return ByteVector();
 }
 
-unsigned int Frame::size() const {
-  if (d->header) {
+unsigned int Frame::size() const
+{
+  if(d->header)
     return d->header->frameSize();
-  }
-
   return 0;
 }
 
-void Frame::setData(const ByteVector &data) { parse(data); }
+void Frame::setData(const ByteVector &data)
+{
+  parse(data);
+}
 
-void Frame::setText(const String &) {}
+void Frame::setText(const String &)
+{
+}
 
-StringList Frame::toStringList() const { return toString(); }
+StringList Frame::toStringList() const
+{
+  return toString();
+}
 
-ByteVector Frame::render() const {
+ByteVector Frame::render() const
+{
   ByteVector fieldData = renderFields();
-
   d->header->setFrameSize(fieldData.size());
   ByteVector headerData = d->header->render();
 
   return headerData + fieldData;
 }
 
-Frame::Header *Frame::header() const { return d->header; }
+Frame::Header *Frame::header() const
+{
+  return d->header;
+}
 
-namespace {
-constexpr std::array frameTranslation{
+namespace
+{
+  constexpr std::array frameTranslation {
     // Text information frames
     std::pair("TALB", "ALBUM"),
     std::pair("TBPM", "BPM"),
@@ -158,10 +174,9 @@ constexpr std::array frameTranslation{
     std::pair("TOPE", "ORIGINALARTIST"),
     std::pair("TOWN", "OWNER"),
     std::pair("TPE1", "ARTIST"),
-    std::pair("TPE2", "ALBUMARTIST"), // id3's spec says 'PERFORMER', but most
-                                      // programs use 'ALBUMARTIST'
+    std::pair("TPE2", "ALBUMARTIST"), // id3's spec says 'PERFORMER', but most programs use 'ALBUMARTIST'
     std::pair("TPE3", "CONDUCTOR"),
-    std::pair("TPE4", "REMIXER"), // could also be ARRANGER
+    std::pair("TPE4", "REMIXER"),     // could also be ARRANGER
     std::pair("TPOS", "DISCNUMBER"),
     std::pair("TPRO", "PRODUCEDNOTICE"),
     std::pair("TPUB", "LABEL"),
@@ -198,46 +213,40 @@ constexpr std::array frameTranslation{
     std::pair("MVIN", "MOVEMENTNUMBER"),
     std::pair("GRP1", "GROUPING"),
     std::pair("TCMP", "COMPILATION"),
-};
+  };
 
-// list of deprecated frames and their successors
-constexpr std::array deprecatedFrames{
+  // list of deprecated frames and their successors
+  constexpr std::array deprecatedFrames {
     std::pair("TRDA", "TDRC"), // 2.3 -> 2.4 (http://en.wikipedia.org/wiki/ID3)
     std::pair("TDAT", "TDRC"), // 2.3 -> 2.4
     std::pair("TYER", "TDRC"), // 2.3 -> 2.4
     std::pair("TIME", "TDRC"), // 2.3 -> 2.4
-};
-} // namespace
+  };
+}  // namespace
 
-String Frame::frameIDToKey(const ByteVector &id) {
+String Frame::frameIDToKey(const ByteVector &id)
+{
   ByteVector id24 = id;
-
-  for (const auto &[o, t] : deprecatedFrames) {
-    if (id24 == o) {
+  for(const auto &[o, t] : deprecatedFrames) {
+    if(id24 == o) {
       id24 = t;
       break;
     }
   }
-
-  for (const auto &[o, t] : frameTranslation) {
-    if (id24 == o) {
+  for(const auto &[o, t] : frameTranslation) {
+    if(id24 == o)
       return t;
-    }
   }
-
   return String();
 }
 
-ByteVector Frame::keyToFrameID(const String &s) {
+ByteVector Frame::keyToFrameID(const String &s)
+{
   const String key = s.upper();
-
-  for (const auto &[o, t] : frameTranslation) {
-    // allow for matching to the frame value or the taglib value
-    if (key == t || key == o) {
+  for(const auto &[o, t] : frameTranslation) {
+    if(key == t || key == o)
       return o;
-    }
   }
-
   return ByteVector();
 }
 
@@ -245,51 +254,63 @@ ByteVector Frame::keyToFrameID(const String &s) {
 // protected members
 ////////////////////////////////////////////////////////////////////////////////
 
-Frame::Frame(const ByteVector &data) : d(std::make_unique<FramePrivate>()) {
+Frame::Frame(const ByteVector &data) :
+  d(std::make_unique<FramePrivate>())
+{
   d->header = new Header(data);
 }
 
-Frame::Frame(Header *h) : d(std::make_unique<FramePrivate>()) { d->header = h; }
+Frame::Frame(Header *h) :
+  d(std::make_unique<FramePrivate>())
+{
+  d->header = h;
+}
 
-void Frame::setHeader(Header *h, bool deleteCurrent) {
-  if (deleteCurrent) {
+void Frame::setHeader(Header *h, bool deleteCurrent)
+{
+  if(deleteCurrent)
     delete d->header;
-  }
 
   d->header = h;
 }
 
-void Frame::parse(const ByteVector &data) {
-  if (d->header) {
+void Frame::parse(const ByteVector &data)
+{
+  if(d->header)
     d->header->setData(data);
-  } else {
+  else
     d->header = new Header(data);
-  }
 
   parseFields(fieldData(data));
 }
 
-ByteVector Frame::fieldData(const ByteVector &frameData) const {
+ByteVector Frame::fieldData(const ByteVector &frameData) const
+{
   unsigned int headerSize = d->header->size();
 
   unsigned int frameDataOffset = headerSize;
   unsigned int frameDataLength = size();
 
-  if (d->header->compression() || d->header->dataLengthIndicator()) {
+  if(d->header->compression() || d->header->dataLengthIndicator()) {
     frameDataLength = SynchData::toUInt(frameData.mid(headerSize, 4));
     frameDataOffset += 4;
   }
+  if(frameData.size() >= headerSize &&
+     frameDataOffset + frameDataLength > frameData.size()) {
+    // The first check is needed because some "dual purpose" frame constructors
+    // call this method with only the frame ID, i.e. without a complete header.
+    debug("Invalid frame data length");
+    return ByteVector();
+  }
 
-  if (zlib::isAvailable() && d->header->compression() &&
-      !d->header->encryption()) {
-    if (frameData.size() <= frameDataOffset) {
+  if(zlib::isAvailable() && d->header->compression() && !d->header->encryption()) {
+    if(frameData.size() <= frameDataOffset) {
       debug("Compressed frame doesn't have enough data to decode");
       return ByteVector();
     }
 
     const ByteVector outData = zlib::decompress(frameData.mid(frameDataOffset));
-
-    if (!outData.isEmpty() && frameDataLength != outData.size()) {
+    if(!outData.isEmpty() && frameDataLength != outData.size()) {
       debug("frameDataLength does not match the data length returned by zlib");
     }
 
@@ -299,54 +320,45 @@ ByteVector Frame::fieldData(const ByteVector &frameData) const {
   return frameData.mid(frameDataOffset, frameDataLength);
 }
 
-String Frame::readStringField(const ByteVector &data, String::Type encoding,
-                              int *position) {
+String Frame::readStringField(const ByteVector &data, String::Type encoding, int *position)
+{
   int start = 0;
 
-  if (!position) {
+  if(!position)
     position = &start;
-  }
 
   ByteVector delimiter = textDelimiter(encoding);
 
   int end = data.find(delimiter, *position, delimiter.size());
 
-  if (end < *position) {
+  if(end < *position)
     return String();
-  }
 
   String str;
-
-  if (encoding == String::Latin1) {
-    str =
-        Tag::latin1StringHandler()->parse(data.mid(*position, end - *position));
-  } else {
+  if(encoding == String::Latin1)
+    str = Tag::latin1StringHandler()->parse(data.mid(*position, end - *position));
+  else
     str = String(data.mid(*position, end - *position), encoding);
-  }
 
   *position = end + delimiter.size();
 
   return str;
 }
 
-String::Type Frame::checkTextEncoding(const StringList &fields,
-                                      String::Type encoding) const {
-  if ((encoding == String::UTF8 || encoding == String::UTF16BE) &&
-      header()->version() != 4) {
+String::Type Frame::checkTextEncoding(const StringList &fields, String::Type encoding) const
+{
+  if((encoding == String::UTF8 || encoding == String::UTF16BE) && header()->version() != 4)
     return String::UTF16;
-  }
 
-  if (encoding != String::Latin1) {
+  if(encoding != String::Latin1)
     return encoding;
-  }
 
-  for (const auto &field : fields) {
-    if (!field.isLatin1()) {
-      if (header()->version() == 4) {
+  for(const auto &field : fields) {
+    if(!field.isLatin1()) {
+      if(header()->version() == 4) {
         debug("Frame::checkEncoding() -- Rendering using UTF8.");
         return String::UTF8;
       }
-
       debug("Frame::checkEncoding() -- Rendering using UTF16.");
       return String::UTF16;
     }
@@ -355,35 +367,32 @@ String::Type Frame::checkTextEncoding(const StringList &fields,
   return String::Latin1;
 }
 
-PropertyMap Frame::asProperties() const {
-  if (dynamic_cast<const UnknownFrame *>(this)) {
+PropertyMap Frame::asProperties() const
+{
+  if(dynamic_cast< const UnknownFrame *>(this)) {
     PropertyMap m;
     m.addUnsupportedData("UNKNOWN/" + frameID());
     return m;
   }
-
   const ByteVector &id = frameID();
   PropertyMap m;
   m.addUnsupportedData(id);
   return m;
 }
 
-void Frame::splitProperties(const PropertyMap &original,
-                            PropertyMap &singleFrameProperties,
-                            PropertyMap &tiplProperties,
-                            PropertyMap &tmclProperties) {
+void Frame::splitProperties(const PropertyMap &original, PropertyMap &singleFrameProperties,
+          PropertyMap &tiplProperties, PropertyMap &tmclProperties)
+{
   singleFrameProperties.clear();
   tiplProperties.clear();
   tmclProperties.clear();
-
-  for (const auto &[person, tag] : original) {
-    if (TextIdentificationFrame::involvedPeopleMap().contains(person)) {
+  for(const auto &[person, tag] : original) {
+    if(TextIdentificationFrame::involvedPeopleMap().contains(person))
       tiplProperties.insert(person, tag);
-    } else if (person.startsWith(TextIdentificationFrame::instrumentPrefix)) {
+    else if(person.startsWith(TextIdentificationFrame::instrumentPrefix))
       tmclProperties.insert(person, tag);
-    } else {
+    else
       singleFrameProperties.insert(person, tag);
-    }
   }
 }
 
@@ -391,35 +400,36 @@ void Frame::splitProperties(const PropertyMap &original,
 // Frame::Header class
 ////////////////////////////////////////////////////////////////////////////////
 
-class Frame::Header::HeaderPrivate {
+class Frame::Header::HeaderPrivate
+{
 public:
   ByteVector frameID;
-  unsigned int frameSize{0};
-  unsigned int version{4};
+  unsigned int frameSize { 0 };
+  unsigned int version { 4 };
 
   // flags
 
-  bool tagAlterPreservation{false};
-  bool fileAlterPreservation{false};
-  bool readOnly{false};
-  bool groupingIdentity{false};
-  bool compression{false};
-  bool encryption{false};
-  bool unsynchronisation{false};
-  bool dataLengthIndicator{false};
+  bool tagAlterPreservation { false };
+  bool fileAlterPreservation { false };
+  bool readOnly { false };
+  bool groupingIdentity { false };
+  bool compression { false };
+  bool encryption { false };
+  bool unsynchronisation { false };
+  bool dataLengthIndicator { false };
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // public members (Frame::Header)
 ////////////////////////////////////////////////////////////////////////////////
 
-unsigned int Frame::Header::size() const {
-  switch (d->version) {
+unsigned int Frame::Header::size() const
+{
+  switch(d->version) {
   case 0:
   case 1:
   case 2:
     return 6;
-
   case 3:
   case 4:
   default:
@@ -427,23 +437,26 @@ unsigned int Frame::Header::size() const {
   }
 }
 
-Frame::Header::Header(const ByteVector &data, unsigned int version)
-    : d(std::make_unique<HeaderPrivate>()) {
+Frame::Header::Header(const ByteVector &data, unsigned int version) :
+  d(std::make_unique<HeaderPrivate>())
+{
   setData(data, version);
 }
 
 Frame::Header::~Header() = default;
 
-void Frame::Header::setData(const ByteVector &data, unsigned int version) {
+void Frame::Header::setData(const ByteVector &data, unsigned int version)
+{
   d->version = version;
 
-  switch (version) {
+  switch(version) {
   case 0:
   case 1:
-  case 2: {
+  case 2:
+  {
     // ID3v2.2
 
-    if (data.size() < 3) {
+    if(data.size() < 3) {
       debug("You must at least specify a frame ID.");
       return;
     }
@@ -455,7 +468,7 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
     // If the full header information was not passed in, do not continue to the
     // steps to parse the frame size and flags.
 
-    if (data.size() < 6) {
+    if(data.size() < 6) {
       d->frameSize = 0;
       return;
     }
@@ -464,11 +477,11 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
 
     break;
   }
-
-  case 3: {
+  case 3:
+  {
     // ID3v2.3
 
-    if (data.size() < 4) {
+    if(data.size() < 4) {
       debug("You must at least specify a frame ID.");
       return;
     }
@@ -480,7 +493,7 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
     // If the full header information was not passed in, do not continue to the
     // steps to parse the frame size and flags.
 
-    if (data.size() < 10) {
+    if(data.size() < 10) {
       d->frameSize = 0;
       return;
     }
@@ -492,25 +505,25 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
 
     { // read the first byte of flags
       std::bitset<8> flags(data[8]);
-      d->tagAlterPreservation = flags[7];  // (structure 3.3.1.a)
+      d->tagAlterPreservation  = flags[7]; // (structure 3.3.1.a)
       d->fileAlterPreservation = flags[6]; // (structure 3.3.1.b)
-      d->readOnly = flags[5];              // (structure 3.3.1.c)
+      d->readOnly              = flags[5]; // (structure 3.3.1.c)
     }
 
     { // read the second byte of flags
       std::bitset<8> flags(data[9]);
-      d->compression = flags[7];      // (structure 3.3.1.i)
-      d->encryption = flags[6];       // (structure 3.3.1.j)
-      d->groupingIdentity = flags[5]; // (structure 3.3.1.k)
+      d->compression         = flags[7]; // (structure 3.3.1.i)
+      d->encryption          = flags[6]; // (structure 3.3.1.j)
+      d->groupingIdentity    = flags[5]; // (structure 3.3.1.k)
     }
     break;
   }
-
   case 4:
-  default: {
+  default:
+  {
     // ID3v2.4
 
-    if (data.size() < 4) {
+    if(data.size() < 4) {
       debug("You must at least specify a frame ID.");
       return;
     }
@@ -522,7 +535,7 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
     // If the full header information was not passed in, do not continue to the
     // steps to parse the frame size and flags.
 
-    if (data.size() < 10) {
+    if(data.size() < 10) {
       d->frameSize = 0;
       return;
     }
@@ -532,33 +545,30 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
 
     d->frameSize = SynchData::toUInt(data.mid(4, 4));
 #ifndef NO_ITUNES_HACKS
-
     // iTunes writes v2.4 tags with v2.3-like frame sizes
-    if (d->frameSize > 127) {
-      if (!isValidFrameID(data.mid(d->frameSize + 10, 4))) {
+    if(d->frameSize > 127) {
+      if(!isValidFrameID(data.mid(d->frameSize + 10, 4))) {
         unsigned int uintSize = data.toUInt(4U);
-
-        if (isValidFrameID(data.mid(uintSize + 10, 4))) {
+        if(isValidFrameID(data.mid(uintSize + 10, 4))) {
           d->frameSize = uintSize;
         }
       }
     }
-
 #endif
 
     { // read the first byte of flags
       std::bitset<8> flags(data[8]);
-      d->tagAlterPreservation = flags[6];  // (structure 4.1.1.a)
+      d->tagAlterPreservation  = flags[6]; // (structure 4.1.1.a)
       d->fileAlterPreservation = flags[5]; // (structure 4.1.1.b)
-      d->readOnly = flags[4];              // (structure 4.1.1.c)
+      d->readOnly              = flags[4]; // (structure 4.1.1.c)
     }
 
     { // read the second byte of flags
       std::bitset<8> flags(data[9]);
-      d->groupingIdentity = flags[6];    // (structure 4.1.2.h)
-      d->compression = flags[3];         // (structure 4.1.2.k)
-      d->encryption = flags[2];          // (structure 4.1.2.m)
-      d->unsynchronisation = flags[1];   // (structure 4.1.2.n)
+      d->groupingIdentity    = flags[6]; // (structure 4.1.2.h)
+      d->compression         = flags[3]; // (structure 4.1.2.k)
+      d->encryption          = flags[2]; // (structure 4.1.2.m)
+      d->unsynchronisation   = flags[1]; // (structure 4.1.2.n)
       d->dataLengthIndicator = flags[0]; // (structure 4.1.2.p)
     }
     break;
@@ -566,53 +576,90 @@ void Frame::Header::setData(const ByteVector &data, unsigned int version) {
   }
 }
 
-ByteVector Frame::Header::frameID() const { return d->frameID; }
+ByteVector Frame::Header::frameID() const
+{
+  return d->frameID;
+}
 
-void Frame::Header::setFrameID(const ByteVector &id) {
+void Frame::Header::setFrameID(const ByteVector &id)
+{
   d->frameID = id.mid(0, 4);
 }
 
-unsigned int Frame::Header::frameSize() const { return d->frameSize; }
+unsigned int Frame::Header::frameSize() const
+{
+  return d->frameSize;
+}
 
-void Frame::Header::setFrameSize(unsigned int size) { d->frameSize = size; }
+void Frame::Header::setFrameSize(unsigned int size)
+{
+  d->frameSize = size;
+}
 
-unsigned int Frame::Header::version() const { return d->version; }
+unsigned int Frame::Header::version() const
+{
+  return d->version;
+}
 
-void Frame::Header::setVersion(unsigned int version) { d->version = version; }
+void Frame::Header::setVersion(unsigned int version)
+{
+  d->version = version;
+}
 
-bool Frame::Header::tagAlterPreservation() const {
+bool Frame::Header::tagAlterPreservation() const
+{
   return d->tagAlterPreservation;
 }
 
-void Frame::Header::setTagAlterPreservation(bool preserve) {
+void Frame::Header::setTagAlterPreservation(bool preserve)
+{
   d->tagAlterPreservation = preserve;
 }
 
-bool Frame::Header::fileAlterPreservation() const {
+bool Frame::Header::fileAlterPreservation() const
+{
   return d->fileAlterPreservation;
 }
 
-bool Frame::Header::readOnly() const { return d->readOnly; }
+bool Frame::Header::readOnly() const
+{
+  return d->readOnly;
+}
 
-bool Frame::Header::groupingIdentity() const { return d->groupingIdentity; }
+bool Frame::Header::groupingIdentity() const
+{
+  return d->groupingIdentity;
+}
 
-bool Frame::Header::compression() const { return d->compression; }
+bool Frame::Header::compression() const
+{
+  return d->compression;
+}
 
-bool Frame::Header::encryption() const { return d->encryption; }
+bool Frame::Header::encryption() const
+{
+  return d->encryption;
+}
 
-bool Frame::Header::unsynchronisation() const { return d->unsynchronisation; }
+bool Frame::Header::unsynchronisation() const
+{
+  return d->unsynchronisation;
+}
 
-bool Frame::Header::dataLengthIndicator() const {
+bool Frame::Header::dataLengthIndicator() const
+{
   return d->dataLengthIndicator;
 }
 
-ByteVector Frame::Header::render() const {
+ByteVector Frame::Header::render() const
+{
   ByteVector flags(2, static_cast<char>(0)); // just blank for the moment
 
   ByteVector v = d->frameID +
-                 (d->version == 3 ? ByteVector::fromUInt(d->frameSize)
-                                  : SynchData::fromUInt(d->frameSize)) +
-                 flags;
+    (d->version == 3
+      ? ByteVector::fromUInt(d->frameSize)
+      : SynchData::fromUInt(d->frameSize)) +
+    flags;
 
   return v;
 }

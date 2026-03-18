@@ -26,11 +26,11 @@
 #ifndef TAGLIB_VARIANT_H
 #define TAGLIB_VARIANT_H
 
-#include <iosfwd>
+#include <sstream>
 
-#include <taglib/tlist.h>
-#include <taglib/tmap.h>
-#include <taglib/taglib_export.h>
+#include "tlist.h"
+#include "tmap.h"
+#include "taglib_export.h"
 
 // Forward declaration needed for friend function
 namespace TagLib { class Variant; }

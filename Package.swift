@@ -24,6 +24,8 @@ let package = Package(
 				.headerSearchPath("dsf"),
 				.headerSearchPath("flac"),
 				.headerSearchPath("it"),
+				.headerSearchPath("matroska"),
+				.headerSearchPath("matroska/ebml"),
 				.headerSearchPath("mod"),
 				.headerSearchPath("mp4"),
 				.headerSearchPath("mpc"),
