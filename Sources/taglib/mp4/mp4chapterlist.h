@@ -35,7 +35,8 @@ namespace TagLib {
     /*!
      * A single Nero-style chapter marker.
      */
-    struct TAGLIB_EXPORT Chapter {
+    struct TAGLIB_EXPORT Chapter
+    {
       long long startTime;  //!< Start time in 100-nanosecond units
       String title;
     };
@@ -47,7 +48,8 @@ namespace TagLib {
      * from MP4 files. Operates independently of MP4::Tag — the chpl atom
      * lives at moov/udta/chpl, a sibling of the metadata ilst path.
      */
-    class TAGLIB_EXPORT MP4ChapterList {
+    class TAGLIB_EXPORT MP4ChapterList
+    {
     public:
       /*!
        * Reads chapter markers from the MP4 file at \a path.

@@ -44,7 +44,8 @@ namespace {
 
   // Update parent atom sizes along a path when child size changes by delta.
   // Mirrors MP4::Tag::updateParents().
-  void updateParentSizes(TagLib::File *file, const MP4::AtomList &path, offset_t delta, int ignore = 0)
+  void updateParentSizes(TagLib::File *file, const MP4::AtomList &path, offset_t delta,
+                         int ignore = 0)
   {
     if(static_cast<int>(path.size()) <= ignore)
       return;
@@ -119,8 +120,7 @@ namespace {
           atom->addToOffset(delta);
         file->seek(atom->offset() + 9);
         ByteVector data = file->readBlock(atom->length() - 9);
-        if(const unsigned int flags = data.toUInt(0, 3, true);
-           flags & 1) {
+        if(const unsigned int flags = data.toUInt(0, 3, true); flags & 1) {
           long long o = data.toLongLong(7U);
           if(o > offset)
             o += delta;
@@ -138,9 +138,9 @@ namespace {
 
     ByteVector data;
     // Version (1 byte) + flags (3 bytes) + reserved (4 bytes)
-    data.append(static_cast<char>(0x01));        // version 1
-    data.append(ByteVector(3, '\0'));             // flags
-    data.append(ByteVector(4, '\0'));             // reserved
+    data.append(static_cast<char>(0x01));  // version 1
+    data.append(ByteVector(3, '\0'));      // flags
+    data.append(ByteVector(4, '\0'));      // reserved
 
     // Chapter count
     data.append(static_cast<char>(count & 0xFF));
@@ -212,8 +212,7 @@ namespace {
 
 // MARK: - Public API
 
-MP4::ChapterList
-MP4::MP4ChapterList::read(const char *path)
+MP4::ChapterList MP4::MP4ChapterList::read(const char *path)
 {
   MP4::File file(path, false);
   if(!file.isOpen() || !file.isValid()) {
@@ -235,8 +234,7 @@ MP4::MP4ChapterList::read(const char *path)
   return parseChplData(data);
 }
 
-bool
-MP4::MP4ChapterList::write(const char *path, const ChapterList &chapters)
+bool MP4::MP4ChapterList::write(const char *path, const ChapterList &chapters)
 {
   MP4::File file(path, false);
   if(!file.isOpen() || !file.isValid() || file.readOnly()) {
@@ -304,8 +302,7 @@ MP4::MP4ChapterList::write(const char *path, const ChapterList &chapters)
   return true;
 }
 
-bool
-MP4::MP4ChapterList::remove(const char *path)
+bool MP4::MP4ChapterList::remove(const char *path)
 {
   MP4::File file(path, false);
   if(!file.isOpen() || !file.isValid() || file.readOnly()) {

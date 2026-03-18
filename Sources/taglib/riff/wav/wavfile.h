@@ -32,41 +32,42 @@
 #include <taglib/wavproperties.h>
 
 namespace TagLib {
-namespace RIFF {
-//! An implementation of WAV metadata
+  namespace RIFF {
+    //! An implementation of WAV metadata
 
-/*!
+    /*!
  * This is an implementation of WAV metadata.
  *
  * This supports an ID3v2 tag as well as reading stream from the ID3 RIFF
  * chunk as well as properties from the file.
  */
 
-namespace WAV {
-//! An implementation of TagLib::File with WAV specific methods
+    namespace WAV {
+      //! An implementation of TagLib::File with WAV specific methods
 
-/*!
+      /*!
  * This implements and provides an interface for WAV files to the
  * TagLib::Tag and TagLib::AudioProperties interfaces by way of implementing
  * the abstract TagLib::File API as well as providing some additional
  * information specific to WAV files.
  */
 
-class TAGLIB_EXPORT File : public TagLib::RIFF::File {
-public:
-  enum TagTypes {
-    //! Empty set.  Matches no tag types.
-    NoTags = 0x0000,
-    //! Matches ID3v2 tags.
-    ID3v2 = 0x0001,
-    //! Matches INFO tags.
-    Info = 0x0002,
+      class TAGLIB_EXPORT File : public TagLib::RIFF::File
+      {
+      public:
+        enum TagTypes {
+          //! Empty set.  Matches no tag types.
+          NoTags = 0x0000,
+          //! Matches ID3v2 tags.
+          ID3v2 = 0x0001,
+          //! Matches INFO tags.
+          Info = 0x0002,
 
-    //! Matches all tag types.
-    AllTags = 0xffff
-  };
+          //! Matches all tag types.
+          AllTags = 0xffff
+        };
 
-  /*!
+        /*!
    * Constructs a WAV file from \a file.  If \a readProperties is \c true the
    * file's audio properties will also be read.
    *
@@ -75,11 +76,11 @@ public:
    * If this file contains an ID3v2 tag, the frames will be created using
    * \a frameFactory (default if null).
    */
-  File(FileName file, bool readProperties = true,
-       Properties::ReadStyle propertiesStyle = Properties::Average,
-       ID3v2::FrameFactory *frameFactory = nullptr);
+        File(FileName file, bool readProperties = true,
+             Properties::ReadStyle propertiesStyle = Properties::Average,
+             ID3v2::FrameFactory *frameFactory = nullptr);
 
-  /*!
+        /*!
    * Constructs a WAV file from \a stream.  If \a readProperties is \c true
    * the file's audio properties will also be read.
    *
@@ -91,25 +92,25 @@ public:
    * If this file contains an ID3v2 tag, the frames will be created using
    * \a frameFactory (default if null).
    */
-  File(IOStream *stream, bool readProperties = true,
-       Properties::ReadStyle propertiesStyle = Properties::Average,
-       ID3v2::FrameFactory *frameFactory = nullptr);
+        File(IOStream *stream, bool readProperties = true,
+             Properties::ReadStyle propertiesStyle = Properties::Average,
+             ID3v2::FrameFactory *frameFactory = nullptr);
 
-  /*!
+        /*!
    * Destroys this instance of the File.
    */
-  ~File() override;
+        ~File() override;
 
-  File(const File &) = delete;
-  File &operator=(const File &) = delete;
+        File(const File &) = delete;
+        File &operator=(const File &) = delete;
 
-  /*!
+        /*!
    * Returns the tag for this file.  This will be a RIFF INFO tag, an
    * ID3v2 tag or a combination of the two.
    */
-  TagLib::Tag *tag() const override;
+        TagLib::Tag *tag() const override;
 
-  /*!
+        /*!
    * Returns the ID3v2 Tag for this file.
    *
    * \note This always returns a valid pointer regardless of whether or not
@@ -118,9 +119,9 @@ public:
    *
    * \see hasID3v2Tag()
    */
-  ID3v2::Tag *ID3v2Tag() const;
+        ID3v2::Tag *ID3v2Tag() const;
 
-  /*!
+        /*!
    * Returns the RIFF INFO Tag for this file.
    *
    * \note This always returns a valid pointer regardless of whether or not
@@ -129,116 +130,133 @@ public:
    *
    * \see hasInfoTag()
    */
-  Info::Tag *InfoTag() const;
+        Info::Tag *InfoTag() const;
 
-  /*!
-   * Returns a String containing the iXML chunk.
+        /*!
+   * Returns the raw iXML chunk data as a String.
+   * Empty if no iXML chunk is present.
    *
-   * \note Not a tag, but just the raw chunk value returned as a String.
-   *
+   * \see setiXMLData()
    * \see hasiXMLTag()
    */
-  String iXMLTag;
+        String iXMLData() const;
 
-  /*!
-   * Raw BEXT chunk data as a ByteVector.
-   * Empty if no BEXT chunk is present.
-   * Set this to write/update a BEXT chunk on save; clear to remove it.
+        /*!
+   * Sets the iXML chunk data.  Pass an empty string to remove the
+   * iXML chunk on save.
    *
+   * \see iXMLData()
+   * \see hasiXMLTag()
+   */
+        void setiXMLData(const String &data);
+
+        /*!
+   * Returns the raw BEXT (Broadcast Audio Extension) chunk data
+   * as a ByteVector.  Empty if no BEXT chunk is present.
+   *
+   * \see setBEXTData()
    * \see hasBEXTTag()
    */
-  ByteVector bextTag;
+        ByteVector BEXTData() const;
 
-  /*!
+        /*!
+   * Sets the BEXT chunk data.  Pass an empty ByteVector to remove
+   * the BEXT chunk on save.
+   *
+   * \see BEXTData()
+   * \see hasBEXTTag()
+   */
+        void setBEXTData(const ByteVector &data);
+
+        /*!
    * This will strip the tags that match the OR-ed together TagTypes from the
    * file.  By default it strips all tags.  It returns \c true if the tags are
    * successfully stripped.
    *
    * \note This will update the file immediately.
    */
-  void strip(TagTypes tags = AllTags);
+        void strip(TagTypes tags = AllTags);
 
-  /*!
+        /*!
    * Implements the unified property interface -- export function.
    * This method forwards to ID3v2::Tag::properties().
    */
-  PropertyMap properties() const override;
+        PropertyMap properties() const override;
 
-  void removeUnsupportedProperties(const StringList &unsupported) override;
+        void removeUnsupportedProperties(const StringList &unsupported) override;
 
-  /*!
+        /*!
    * Implements the unified property interface -- import function.
    * This method forwards to ID3v2::Tag::setProperties().
    */
-  PropertyMap setProperties(const PropertyMap &) override;
+        PropertyMap setProperties(const PropertyMap &) override;
 
-  /*!
+        /*!
    * Returns the WAV::Properties for this file.  If no audio properties
    * were read then this will return a null pointer.
    */
-  Properties *audioProperties() const override;
+        Properties *audioProperties() const override;
 
-  /*!
+        /*!
    * Saves the file.
    */
-  bool save() override;
+        bool save() override;
 
-  /*!
+        /*!
    * Save the file.  If \a strip is specified, it is possible to choose if
    * tags not specified in \a tags should be stripped from the file or
    * retained.  With \a version, it is possible to specify whether ID3v2.4
    * or ID3v2.3 should be used.
    */
-  bool save(TagTypes tags, StripTags strip = StripOthers,
-            ID3v2::Version version = ID3v2::v4);
+        bool save(TagTypes tags, StripTags strip = StripOthers, ID3v2::Version version = ID3v2::v4);
 
-  /*!
+        /*!
    * Returns whether or not the file on disk actually has an ID3v2 tag.
    *
    * \see ID3v2Tag()
    */
-  bool hasID3v2Tag() const;
+        bool hasID3v2Tag() const;
 
-  /*!
+        /*!
    * Returns whether or not the file on disk actually has a RIFF INFO tag.
    *
    * \see InfoTag()
    */
-  bool hasInfoTag() const;
+        bool hasInfoTag() const;
 
-  /*!
+        /*!
    * Returns whether or not the file on disk actually has an iXML chunk.
    *
    * \see iXMLTag
    */
-  bool hasiXMLTag() const;
+        bool hasiXMLTag() const;
 
-  /*!
+        /*!
    * Returns whether or not the file on disk actually has a BEXT chunk.
    */
-  bool hasBEXTTag() const;
+        bool hasBEXTTag() const;
 
-  /*!
+        /*!
    * Returns whether or not the given \a stream can be opened as a WAV
    * file.
    *
    * \note This method is designed to do a quick check.  The result may
    * not necessarily be correct.
    */
-  static bool isSupported(IOStream *stream);
+        static bool isSupported(IOStream *stream);
 
-private:
-  void read(bool readProperties);
-  void removeTagChunks(TagTypes tags);
+      private:
+        void read(bool readProperties);
+        void removeTagChunks(TagTypes tags);
 
-  friend class Properties;
+        friend class Properties;
 
-  class FilePrivate;
-  TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
-  std::unique_ptr<FilePrivate> d;
-};
-} // namespace WAV
-} // namespace RIFF
-} // namespace TagLib
+        class FilePrivate;
+        TAGLIB_MSVC_SUPPRESS_WARNING_NEEDS_TO_HAVE_DLL_INTERFACE
+        std::unique_ptr<FilePrivate> d;
+      };
+    }  // namespace WAV
+  }  // namespace RIFF
+}  // namespace TagLib
 
 #endif /* ifndef TAGLIB_WAVFILE_H */
