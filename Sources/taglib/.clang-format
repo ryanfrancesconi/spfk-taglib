@@ -68,13 +68,13 @@ AlignConsecutiveDeclarations: false
 AlignConsecutiveMacros: false
 AlignEscapedNewlines: Left
 AlignOperands: Align
-AlignTrailingComments: true
+AlignTrailingComments: false
 
 # -- Line breaks --
-ColumnLimit: 100
+ColumnLimit: 0
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseLabelsOnASingleLine: false
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: None
 AllowShortIfStatementsOnASingleLine: Never
 AllowShortLambdasOnASingleLine: Inline
 AllowShortLoopsOnASingleLine: false
@@ -96,6 +96,8 @@ PackConstructorInitializers: Never
 SortIncludes: false
 
 # -- Penalties --
+# With ColumnLimit: 0 these penalties are largely inert, but kept for
+# reference in case a column limit is re-enabled later.
 PenaltyBreakBeforeFirstCallParameter: 19
 PenaltyBreakComment: 300
 PenaltyBreakFirstLessLess: 120
@@ -108,5 +110,5 @@ Cpp11BracedListStyle: false
 FixNamespaceComments: true
 MaxEmptyLinesToKeep: 1
 ReflowComments: false
-InsertTrailingCommas: None
+InsertTrailingComments: None
 SeparateDefinitionBlocks: Leave
