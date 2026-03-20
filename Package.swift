@@ -48,10 +48,20 @@ let package = Package(
 				.headerSearchPath("xm"),
 				.headerSearchPath("utfcpp/source"),
 			]),
+		.target(
+			name: "TagLibTestHelper",
+			dependencies: ["taglib"],
+			publicHeadersPath: "include",
+			cxxSettings: [
+				.headerSearchPath("include"),
+			]),
 		.testTarget(
 			name: "SPFKTagLibTests",
 			dependencies: [
-				"taglib",
+				"TagLibTestHelper",
+			],
+			resources: [
+				.copy("Resources"),
 			]),
 	],
 	cxxLanguageStandard: .cxx17
