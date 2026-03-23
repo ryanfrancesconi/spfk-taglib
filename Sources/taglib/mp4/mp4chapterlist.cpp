@@ -216,7 +216,6 @@ MP4::ChapterList MP4::MP4ChapterList::read(const char *path)
 {
   MP4::File file(path, false);
   if(!file.isOpen() || !file.isValid()) {
-    debug("MP4ChapterList::read() -- Could not open file");
     return ChapterList();
   }
 
