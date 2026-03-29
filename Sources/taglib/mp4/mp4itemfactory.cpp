@@ -276,6 +276,12 @@ ByteVector ItemFactory::nameForPropertyKey(const String &key) const
 ItemFactory::ItemFactory() :
   d(std::make_unique<ItemFactoryPrivate>())
 {
+  // Eagerly initialize the lookup maps so concurrent calls to propertyKeyForName()
+  // and handlerTypeForName() (e.g. via batchMap during import) do not race on
+  // first-call lazy initialization.  The global `factory` singleton is constructed
+  // before any thread is spawned, so this is inherently thread-safe.
+  d->handlerTypeForName = nameHandlerMap();
+  d->propertyKeyForName = namePropertyMap();
 }
 
 ItemFactory::~ItemFactory() = default;
