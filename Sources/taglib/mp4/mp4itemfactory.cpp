@@ -25,6 +25,7 @@
 
 #include "mp4itemfactory.h"
 
+#include <mutex>
 #include <utility>
 
 #include "tbytevector.h"
@@ -47,6 +48,8 @@ public:
   NameHandlerMap handlerTypeForName;
   Map<ByteVector, String> propertyKeyForName;
   Map<String, ByteVector> nameForPropertyKey;
+  mutable std::once_flag handlerMapOnce;
+  mutable std::once_flag propertyMapsOnce;
 };
 
 ItemFactory ItemFactory::factory;
@@ -239,9 +242,11 @@ std::pair<String, StringList> ItemFactory::itemToProperty(
 
 String ItemFactory::propertyKeyForName(const ByteVector &name) const
 {
-  if(d->propertyKeyForName.isEmpty()) {
+  std::call_once(d->propertyMapsOnce, [this] {
     d->propertyKeyForName = namePropertyMap();
-  }
+    for(const auto &[k, t] : std::as_const(d->propertyKeyForName))
+      d->nameForPropertyKey[t] = k;
+  });
   String key = d->propertyKeyForName.value(name);
   if(key.isEmpty() && name.startsWith(freeFormPrefix)) {
     key = name.mid(std::size(freeFormPrefix) - 1);
@@ -251,14 +256,11 @@ String ItemFactory::propertyKeyForName(const ByteVector &name) const
 
 ByteVector ItemFactory::nameForPropertyKey(const String &key) const
 {
-  if(d->nameForPropertyKey.isEmpty()) {
-    if(d->propertyKeyForName.isEmpty()) {
-      d->propertyKeyForName = namePropertyMap();
-    }
-    for(const auto &[k, t] : std::as_const(d->propertyKeyForName)) {
+  std::call_once(d->propertyMapsOnce, [this] {
+    d->propertyKeyForName = namePropertyMap();
+    for(const auto &[k, t] : std::as_const(d->propertyKeyForName))
       d->nameForPropertyKey[t] = k;
-    }
-  }
+  });
   ByteVector name = d->nameForPropertyKey.value(key);
   if(name.isEmpty() && !key.isEmpty()) {
     const auto &firstChar = key[0];
@@ -276,12 +278,6 @@ ByteVector ItemFactory::nameForPropertyKey(const String &key) const
 ItemFactory::ItemFactory() :
   d(std::make_unique<ItemFactoryPrivate>())
 {
-  // Eagerly initialize the lookup maps so concurrent calls to propertyKeyForName()
-  // and handlerTypeForName() (e.g. via batchMap during import) do not race on
-  // first-call lazy initialization.  The global `factory` singleton is constructed
-  // before any thread is spawned, so this is inherently thread-safe.
-  d->handlerTypeForName = nameHandlerMap();
-  d->propertyKeyForName = namePropertyMap();
 }
 
 ItemFactory::~ItemFactory() = default;
@@ -323,9 +319,9 @@ ItemFactory::NameHandlerMap ItemFactory::nameHandlerMap() const
 ItemFactory::ItemHandlerType ItemFactory::handlerTypeForName(
   const ByteVector &name) const
 {
-  if(d->handlerTypeForName.isEmpty()) {
+  std::call_once(d->handlerMapOnce, [this] {
     d->handlerTypeForName = nameHandlerMap();
-  }
+  });
   auto type = d->handlerTypeForName.value(name, ItemHandlerType::Unknown);
   if (type == ItemHandlerType::Unknown && name.size() == 4) {
     type = ItemHandlerType::Text;
