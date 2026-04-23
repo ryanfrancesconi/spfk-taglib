@@ -19,7 +19,7 @@ Public headers are colocated with their implementations (matching upstream) and 
 
 spfk-taglib includes the following extensions beyond upstream TagLib:
 
-- **MP4ChapterList** — Read, write, and remove Nero-style chapter markers (`chpl` atom at `moov/udta/chpl`) in MP4/M4A/M4B containers. Operates independently of `MP4::Tag::save()`, with proper parent atom size updates and chunk offset (`stco`/`co64`/`tfhd`) fixups.
+- **MP4 Chapter support** — Read, write, and remove both QT chapter tracks and Nero-style `chpl` chapters in MP4/M4A/M4B containers. Exposed via `MP4::File::qtChapters()`, `setQtChapters()`, `neroChapters()`, and `setNeroChapters()`; both formats are saved lazily by `file.save()`. Includes fixes for orphaned `mdat` atoms (PR #1325) and shared-`mdat` data loss (PR #1343).
 
 - **XiphChapterUtil** — Read, write, and remove Vorbis comment chapters in FLAC, OGG, and Opus files via `CHAPTER###` / `CHAPTER###NAME` field conventions.
 
@@ -36,7 +36,7 @@ The directory layout mirrors upstream TagLib, so syncing involves:
 3. For new format modules, add the corresponding `headerSearchPath` entries to `Package.swift`, add public headers to `module.modulemap`, and run `scripts/update-symlinks.sh`.
 4. Update `SPFK_TAGLIB_UPSTREAM_VERSION` in `Sources/taglib/toolkit/taglib_config.h`.
 
-Fork-specific additions (`mp4chapterlist`, `xiphchapterutil`, `bext`, `ixml`) live in their own files and don't conflict with upstream changes.
+Fork-specific additions (`mp4chapter*`, `xiphchapterutil`, `bext`, `ixml`) live in their own files and don't conflict with upstream changes.
 
 ## History
 
