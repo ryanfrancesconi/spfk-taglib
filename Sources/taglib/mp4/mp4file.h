@@ -26,11 +26,12 @@
 #ifndef TAGLIB_MP4FILE_H
 #define TAGLIB_MP4FILE_H
 
-#include <taglib/tfile.h>
-#include <taglib/taglib_export.h>
-#include <taglib/mp4tag.h>
-#include <taglib/tag.h>
-#include <taglib/mp4properties.h>
+#include "tfile.h"
+#include "taglib_export.h"
+#include "mp4tag.h"
+#include "tag.h"
+#include "mp4properties.h"
+#include "mp4chapter.h"
 
 namespace TagLib {
   //! An implementation of MP4 (AAC, ALAC, ...) metadata
@@ -129,6 +130,26 @@ namespace TagLib {
        * Returns the MP4 audio properties for this file.
        */
       Properties *audioProperties() const override;
+
+      /*!
+       * Returns the Nero style chapters for this file.
+       */
+      ChapterList neroChapters();
+
+      /*!
+       * Sets the Nero style chapters for this file.
+       */
+      void setNeroChapters(const ChapterList &chapters);
+
+      /*!
+       * Returns the QuickTime chapters for this file.
+       */
+      ChapterList qtChapters();
+
+      /*!
+       * Sets the QuickTime style chapters for this file.
+       */
+      void setQtChapters(const ChapterList &chapters);
 
       /*!
        * Save the file.

@@ -1,3 +1,7 @@
+/**************************************************************************
+    copyright            : (C) 2026 by Ryan Francesconi
+ **************************************************************************/
+
 /***************************************************************************
  *   This library is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU Lesser General Public License version   *
@@ -18,39 +22,58 @@
  *   http://www.mozilla.org/MPL/                                           *
  ***************************************************************************/
 
-#ifndef TAGLIB_MATROSKASEEKHEAD_H
-#define TAGLIB_MATROSKASEEKHEAD_H
-#ifndef DO_NOT_DOCUMENT
+#include "mp4chapter.h"
+#include "tstring.h"
 
-#include "matroskaelement.h"
-#include "tlist.h"
+using namespace TagLib;
 
-namespace TagLib {
-  class File;
-  class ByteVector;
+class MP4::Chapter::ChapterPrivate
+{
+public:
+  ChapterPrivate() = default;
+  ~ChapterPrivate() = default;
+  String title;
+  long long startTime {0};
+};
 
-  namespace Matroska {
-    class SeekHead : public Element
-    {
-    public:
-      explicit SeekHead(offset_t segmentDataOffset);
-      ~SeekHead() override;
-
-      bool isValid(TagLib::File &file) const;
-      void addEntry(const Element &element);
-      void addEntry(ID id, offset_t offset);
-      const List<std::pair<unsigned int, offset_t>> &entryList() const;
-      void write(TagLib::File &file) override;
-      void sort();
-      bool sizeChanged(Element &caller, offset_t delta) override;
-
-    private:
-      ByteVector renderInternal() override;
-      List<std::pair<unsigned int, offset_t>> entries;
-      const offset_t segmentDataOffset;
-    };
-  }
+MP4::Chapter::Chapter(const String &title, long long startTime) :
+  d(std::make_unique<ChapterPrivate>())
+{
+  d->title = title;
+  d->startTime = startTime;
 }
 
-#endif
-#endif
+MP4::Chapter::Chapter(const Chapter &other) :
+  d(std::make_unique<ChapterPrivate>(*other.d))
+{
+}
+
+MP4::Chapter::Chapter(Chapter &&other) noexcept = default;
+
+MP4::Chapter::Chapter::~Chapter() = default;
+
+MP4::Chapter &MP4::Chapter::Chapter::operator=(const Chapter &other)
+{
+  Chapter(other).swap(*this);
+  return *this;
+}
+
+MP4::Chapter &MP4::Chapter::Chapter::operator=(
+  Chapter &&other) noexcept = default;
+
+void MP4::Chapter::swap(Chapter &other) noexcept
+{
+  using std::swap;
+
+  swap(d, other.d);
+}
+
+const String &MP4::Chapter::title() const
+{
+  return d->title;
+}
+
+long long MP4::Chapter::startTime() const
+{
+  return d->startTime;
+}

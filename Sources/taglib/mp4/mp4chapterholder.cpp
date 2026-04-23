@@ -1,3 +1,8 @@
+/**************************************************************************
+    copyright            : (C) 2006 by Urs Fleisch
+    email                : ufleisch@users.sourceforge.net
+ **************************************************************************/
+
 /***************************************************************************
  *   This library is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU Lesser General Public License version   *
@@ -18,39 +23,22 @@
  *   http://www.mozilla.org/MPL/                                           *
  ***************************************************************************/
 
-#ifndef TAGLIB_MATROSKASEEKHEAD_H
-#define TAGLIB_MATROSKASEEKHEAD_H
-#ifndef DO_NOT_DOCUMENT
+#include "mp4chapterholder.h"
 
-#include "matroskaelement.h"
-#include "tlist.h"
+using namespace TagLib;
 
-namespace TagLib {
-  class File;
-  class ByteVector;
-
-  namespace Matroska {
-    class SeekHead : public Element
-    {
-    public:
-      explicit SeekHead(offset_t segmentDataOffset);
-      ~SeekHead() override;
-
-      bool isValid(TagLib::File &file) const;
-      void addEntry(const Element &element);
-      void addEntry(ID id, offset_t offset);
-      const List<std::pair<unsigned int, offset_t>> &entryList() const;
-      void write(TagLib::File &file) override;
-      void sort();
-      bool sizeChanged(Element &caller, offset_t delta) override;
-
-    private:
-      ByteVector renderInternal() override;
-      List<std::pair<unsigned int, offset_t>> entries;
-      const offset_t segmentDataOffset;
-    };
-  }
+MP4::ChapterList MP4::ChapterHolder::chapters() const
+{
+  return chapterList;
 }
 
-#endif
-#endif
+void MP4::ChapterHolder::setChapters(const ChapterList &chapters)
+{
+  chapterList = chapters;
+  modified = true;
+}
+
+bool MP4::ChapterHolder::isModified() const
+{
+  return modified;
+}
