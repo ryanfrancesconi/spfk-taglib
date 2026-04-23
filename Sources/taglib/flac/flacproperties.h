@@ -26,9 +26,9 @@
 #ifndef TAGLIB_FLACPROPERTIES_H
 #define TAGLIB_FLACPROPERTIES_H
 
-#include <taglib/tbytevector.h>
-#include <taglib/taglib_export.h>
-#include <taglib/audioproperties.h>
+#include "tbytevector.h"
+#include "taglib_export.h"
+#include "audioproperties.h"
 
 namespace TagLib {
 
@@ -87,7 +87,7 @@ namespace TagLib {
       int bitsPerSample() const;
 
       /*!
-       * Return the number of sample frames.
+       * Returns the number of sample frames.
        */
       unsigned long long sampleFrames() const;
 
