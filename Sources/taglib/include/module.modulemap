@@ -153,9 +153,3 @@ module taglib {
 
 	export *
 }
-
-module taglib_c {
-	requires c99
-	header "taglib/tag_c.h"
-	export *
-}
