@@ -1,7 +1,7 @@
 /***************************************************************************
     copyright            : (C) 2008 by Scott Wheeler
     email                : wheeler@kde.org
-***************************************************************************/
+ ***************************************************************************/
 
 /***************************************************************************
  *   This library is free software; you can redistribute it and/or modify  *
@@ -25,23 +25,25 @@
 
 #include "wavfile.h"
 
-#include "infotag.h"
-#include "tagunion.h"
-#include "tagutils.h"
 #include "tdebug.h"
 #include "tpropertymap.h"
+#include "tagutils.h"
+#include "infotag.h"
+#include "tagunion.h"
 
 using namespace TagLib;
 
-namespace {
+namespace
+{
   enum { ID3v2Index = 0, InfoIndex = 1 };
-}  // namespace
+} // namespace
 
 class RIFF::WAV::File::FilePrivate
 {
 public:
-  FilePrivate(const ID3v2::FrameFactory *frameFactory) :
-    ID3v2FrameFactory(frameFactory ? frameFactory : ID3v2::FrameFactory::instance())
+  FilePrivate(const ID3v2::FrameFactory *frameFactory)
+        : ID3v2FrameFactory(frameFactory ? frameFactory
+                                         : ID3v2::FrameFactory::instance())
   {
   }
 
@@ -49,7 +51,6 @@ public:
 
   const ID3v2::FrameFactory *ID3v2FrameFactory;
   std::unique_ptr<Properties> properties;
-
   TagUnion tag;
 
   bool hasID3v2 { false };
@@ -70,7 +71,6 @@ bool RIFF::WAV::File::isSupported(IOStream *stream)
   // A WAV file has to start with "RIFF????WAVE".
 
   const ByteVector id = Utils::readHeader(stream, 12, false);
-
   return id.startsWith("RIFF") && id.containsAt("WAVE", 8);
 }
 
@@ -83,9 +83,8 @@ RIFF::WAV::File::File(FileName file, bool readProperties, Properties::ReadStyle,
   RIFF::File(file, LittleEndian),
   d(std::make_unique<FilePrivate>(frameFactory))
 {
-  if(isOpen()) {
+  if(isOpen())
     read(readProperties);
-  }
 }
 
 RIFF::WAV::File::File(IOStream *stream, bool readProperties, Properties::ReadStyle,
@@ -93,9 +92,8 @@ RIFF::WAV::File::File(IOStream *stream, bool readProperties, Properties::ReadSty
   RIFF::File(stream, LittleEndian),
   d(std::make_unique<FilePrivate>(frameFactory))
 {
-  if(isOpen()) {
+  if(isOpen())
     read(readProperties);
-  }
 }
 
 RIFF::WAV::File::~File() = default;
@@ -139,13 +137,11 @@ void RIFF::WAV::File::strip(TagTypes tags)
 {
   removeTagChunks(tags);
 
-  if(tags & ID3v2) {
+  if(tags & ID3v2)
     d->tag.set(ID3v2Index, new ID3v2::Tag(nullptr, 0, d->ID3v2FrameFactory));
-  }
 
-  if(tags & Info) {
+  if(tags & Info)
     d->tag.set(InfoIndex, new RIFF::Info::Tag());
-  }
 }
 
 PropertyMap RIFF::WAV::File::properties() const
@@ -186,9 +182,8 @@ bool RIFF::WAV::File::save(TagTypes tags, StripTags strip, ID3v2::Version versio
     return false;
   }
 
-  if(strip == StripOthers) {
+  if(strip == StripOthers)
     File::strip(static_cast<TagTypes>(AllTags & ~tags));
-  }
 
   if(!d->bextData.isEmpty()) {
     removeChunk("bext");
@@ -260,8 +255,8 @@ void RIFF::WAV::File::read(bool readProperties)
   for(unsigned int i = 0; i < chunkCount(); ++i) {
     if(const ByteVector name = chunkName(i); name == "ID3 " || name == "id3 ") {
       if(!d->tag[ID3v2Index]) {
-        d->tag.set(ID3v2Index, new ID3v2::Tag(this, chunkOffset(i), d->ID3v2FrameFactory));
-
+        d->tag.set(ID3v2Index, new ID3v2::Tag(this, chunkOffset(i),
+                                              d->ID3v2FrameFactory));
         d->hasID3v2 = true;
       }
       else {
@@ -289,17 +284,14 @@ void RIFF::WAV::File::read(bool readProperties)
     }
   }
 
-  if(!d->tag[ID3v2Index]) {
+  if(!d->tag[ID3v2Index])
     d->tag.set(ID3v2Index, new ID3v2::Tag(nullptr, 0, d->ID3v2FrameFactory));
-  }
 
-  if(!d->tag[InfoIndex]) {
+  if(!d->tag[InfoIndex])
     d->tag.set(InfoIndex, new RIFF::Info::Tag());
-  }
 
-  if(readProperties) {
+  if(readProperties)
     d->properties = std::make_unique<Properties>(this, Properties::Average);
-  }
 }
 
 void RIFF::WAV::File::removeTagChunks(TagTypes tags)
@@ -307,14 +299,14 @@ void RIFF::WAV::File::removeTagChunks(TagTypes tags)
   if((tags & ID3v2) && d->hasID3v2) {
     removeChunk("ID3 ");
     removeChunk("id3 ");
+
     d->hasID3v2 = false;
   }
 
   if((tags & Info) && d->hasInfo) {
     for(int i = static_cast<int>(chunkCount()) - 1; i >= 0; --i) {
-      if(chunkName(i) == "LIST" && chunkData(i).startsWith("INFO")) {
+      if(chunkName(i) == "LIST" && chunkData(i).startsWith("INFO"))
         removeChunk(i);
-      }
     }
 
     d->hasInfo = false;

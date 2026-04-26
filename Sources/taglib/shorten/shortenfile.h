@@ -28,11 +28,11 @@
 
 #include <memory>
 
-#include <taglib/taglib_export.h>
-#include <taglib/tfile.h>
+#include "taglib_export.h"
+#include "tfile.h"
 
-#include <taglib/shortenproperties.h>
-#include <taglib/shortentag.h>
+#include "shortenproperties.h"
+#include "shortentag.h"
 
 namespace TagLib {
 

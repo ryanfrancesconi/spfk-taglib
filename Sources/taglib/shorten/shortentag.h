@@ -26,7 +26,7 @@
 #ifndef TAGLIB_SHORTENTAG_H
 #define TAGLIB_SHORTENTAG_H
 
-#include <taglib/tag.h>
+#include "tag.h"
 
 namespace TagLib {
   namespace Shorten {

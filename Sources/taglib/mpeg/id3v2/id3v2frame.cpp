@@ -244,7 +244,7 @@ ByteVector Frame::keyToFrameID(const String &s)
 {
   const String key = s.upper();
   for(const auto &[o, t] : frameTranslation) {
-    if(key == t || key == o)
+    if(key == t)
       return o;
   }
   return ByteVector();

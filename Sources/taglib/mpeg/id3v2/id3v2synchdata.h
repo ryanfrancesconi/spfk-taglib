@@ -26,45 +26,45 @@
 #ifndef TAGLIB_ID3V2SYNCHDATA_H
 #define TAGLIB_ID3V2SYNCHDATA_H
 
-#include <taglib/tbytevector.h>
+#include "tbytevector.h"
 
 namespace TagLib {
 
-namespace ID3v2 {
+  namespace ID3v2 {
 
-//! A few functions for ID3v2 synch safe integer conversion
+    //! A few functions for ID3v2 synch safe integer conversion
 
-/*!
- * In the ID3v2.4 standard most integer values are encoded as "synch safe"
- * integers which are encoded in such a way that they will not give false
- * MPEG syncs and confuse MPEG decoders.  This namespace provides some
- * methods for converting to and from these values to ByteVectors for
- * things rendering and parsing ID3v2 data.
- */
+    /*!
+     * In the ID3v2.4 standard most integer values are encoded as "synch safe"
+     * integers which are encoded in such a way that they will not give false
+     * MPEG syncs and confuse MPEG decoders.  This namespace provides some
+     * methods for converting to and from these values to ByteVectors for
+     * things rendering and parsing ID3v2 data.
+     */
 
-namespace SynchData {
-/*!
- * This returns the unsigned integer value of \a data where \a data is a
- * ByteVector that contains a \e synchsafe integer
- * (<a
- * href="https://github.com/taglib/taglib/blob/master/taglib/mpeg/id3v2/id3v2.4.0-structure.txt">
- * id3v2.4.0-structure.txt</a>, 6.2).  The default \a length of
- * 4 is used if another value is not specified.
- */
-TAGLIB_EXPORT unsigned int toUInt(const ByteVector &data);
+    namespace SynchData
+    {
+      /*!
+       * This returns the unsigned integer value of \a data where \a data is a
+       * ByteVector that contains a \e synchsafe integer
+       * (<a href="https://github.com/taglib/taglib/blob/master/taglib/mpeg/id3v2/id3v2.4.0-structure.txt">
+       * id3v2.4.0-structure.txt</a>, 6.2).  The default \a length of
+       * 4 is used if another value is not specified.
+       */
+      TAGLIB_EXPORT unsigned int toUInt(const ByteVector &data);
 
-/*!
- * Returns a 4 byte (32 bit) synchsafe integer based on \a value.
- */
-TAGLIB_EXPORT ByteVector fromUInt(unsigned int value);
+      /*!
+       * Returns a 4 byte (32 bit) synchsafe integer based on \a value.
+       */
+      TAGLIB_EXPORT ByteVector fromUInt(unsigned int value);
 
-/*!
- * Convert the data from unsynchronized data to its original format.
- */
-TAGLIB_EXPORT ByteVector decode(const ByteVector &data);
-} // namespace SynchData
+      /*!
+       * Convert the data from unsynchronized data to its original format.
+       */
+      TAGLIB_EXPORT ByteVector decode(const ByteVector &data);
+    }  // namespace SynchData
 
-} // namespace ID3v2
-} // namespace TagLib
+  }  // namespace ID3v2
+}  // namespace TagLib
 
 #endif
