@@ -38,12 +38,6 @@ The directory layout mirrors upstream TagLib, so syncing involves:
 
 Fork-specific additions (`mp4chapter*`, `xiphchapterutil`, `bext`, `ixml`) live in their own files and don't conflict with upstream changes.
 
-## History
-
-This package originated as a fork of [sbooth/CXXTagLib](https://github.com/sbooth/CXXTagLib), which repackages TagLib for SPM. spfk-taglib has since been restructured to mirror the upstream layout directly and is maintained independently.
-
-The SPM repackaging, directory restructure, upstream sync tooling, fork additions (MP4ChapterList, XiphChapterUtil, BEXT, iXML), and initial upstream sync to TagLib 2.2.1 were implemented with [Claude Code](https://claude.ai/claude-code).
-
 ## Versioning
 
 This package uses its own semantic versioning starting at `1.0.0`, independent of upstream TagLib version numbers. The upstream TagLib revision is tracked in `taglib_config.h`.
