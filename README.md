@@ -15,28 +15,13 @@ The current upstream base is **TagLib 2.3** (tracked via `SPFK_TAGLIB_UPSTREAM_V
 
 Public headers are colocated with their implementations (matching upstream) and exposed to SPM via symlinks in `include/taglib/`. A `module.modulemap` defines the `taglib` and `taglib_c` modules. Run `scripts/update-symlinks.sh` after adding or removing public headers.
 
-## Fork Additions
-
-spfk-taglib includes the following extensions beyond upstream TagLib:
-
-- **MP4 Chapter support** — Read, write, and remove both QT chapter tracks and Nero-style `chpl` chapters in MP4/M4A/M4B containers. Exposed via `MP4::File::qtChapters()`, `setQtChapters()`, `neroChapters()`, and `setNeroChapters()`; both formats are saved lazily by `file.save()`. Includes fixes for orphaned `mdat` atoms (PR #1325) and shared-`mdat` data loss (PR #1343).
-
-- **XiphChapterUtil** — Read, write, and remove Vorbis comment chapters in FLAC, OGG, and Opus files via `CHAPTER###` / `CHAPTER###NAME` field conventions.
-
-- **BEXT (Broadcast Wave)** — Read and write Broadcast Audio Extension chunks in WAV files (EBU Tech 3285, versions 0-2).
-
-- **iXML** — Read and write iXML metadata chunks in WAV files.
-
 ## Syncing with Upstream
 
-The directory layout mirrors upstream TagLib, so syncing involves:
+The directory layout mirrors upstream TagLib, so syncing is a bulk mirror of upstream's `taglib/` directory into `Sources/taglib/` via `rsync --delete`, preserving the SPM-specific paths (`include/`, `utfcpp/`, `toolkit/taglib_config.h`) and stripping build-system files (`CMakeLists.txt`, `*.cmake`, etc.).
 
-1. Diff upstream's `taglib/` directory against `Sources/taglib/` to identify new, modified, and deleted files.
-2. Copy changed files directly — header search paths and include resolution are already set up.
-3. For new format modules, add the corresponding `headerSearchPath` entries to `Package.swift`, add public headers to `module.modulemap`, and run `scripts/update-symlinks.sh`.
-4. Update `SPFK_TAGLIB_UPSTREAM_VERSION` in `Sources/taglib/toolkit/taglib_config.h`.
+For new format modules introduced upstream, add the corresponding `headerSearchPath` entries to `Package.swift`, add public headers to `module.modulemap`, and run `scripts/update-symlinks.sh`.
 
-Fork-specific additions (`mp4chapter*`, `xiphchapterutil`, `bext`, `ixml`) live in their own files and don't conflict with upstream changes.
+On tagged upstream releases, bump `SPFK_TAGLIB_UPSTREAM_VERSION` in `Sources/taglib/toolkit/taglib_config.h` and the version line in this README.
 
 ## Versioning
 
