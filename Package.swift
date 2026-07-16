@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-	name: "SPFKTagLib",
+	name: "spfk-taglib",
 	products: [
 		.library(
 			name: "taglib",
