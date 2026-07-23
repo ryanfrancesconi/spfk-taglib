@@ -6,7 +6,7 @@ import Testing
 
 // MARK: - QT Chapter Tests
 
-@Suite(.serialized)
+@Suite
 final class MP4QTChapterTests {
     /// Path to the bundled test M4A resource.
     static let resourceURL: URL = {
@@ -299,7 +299,7 @@ final class MP4QTChapterTests {
 
 // MARK: - Nero Chapter Tests
 
-@Suite(.serialized)
+@Suite
 final class MP4NeroChapterTests {
     static let resourceURL: URL = {
         Bundle.module.url(forResource: "has-tags", withExtension: "m4a", subdirectory: "Resources")!
