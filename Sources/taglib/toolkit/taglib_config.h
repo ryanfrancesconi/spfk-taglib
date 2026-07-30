@@ -5,7 +5,7 @@
 #define TAGLIB_TAGLIB_CONFIG_H
 
 /* Upstream TagLib version this fork is based on */
-#define SPFK_TAGLIB_UPSTREAM_VERSION "2.3"
+#define SPFK_TAGLIB_UPSTREAM_VERSION "2.3.1"
 
 #define TAGLIB_WITH_APE 1
 #define TAGLIB_WITH_ASF 1

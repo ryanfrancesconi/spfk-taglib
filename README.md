@@ -11,7 +11,7 @@
 
 spfk-taglib is an independent SPM repackaging of [taglib/taglib](https://github.com/taglib/taglib), the C++ audio metadata library. The source tree mirrors upstream TagLib's directory layout — headers live alongside their `.cpp` files in format-specific subdirectories — making syncs with upstream a straightforward directory-level diff.
 
-The current upstream base is **TagLib 2.3** (tracked via `SPFK_TAGLIB_UPSTREAM_VERSION` in `taglib_config.h`).
+The current upstream base is **TagLib 2.3.1** (tracked via `SPFK_TAGLIB_UPSTREAM_VERSION` in `taglib_config.h`).
 
 ## Structure
 
