@@ -122,6 +122,7 @@ module taglib {
 	header "taglib/shortenproperties.h"
 	header "taglib/shortentag.h"
 	header "taglib/matroskafile.h"
+	header "taglib/matroskawritestyle.h"
 	header "taglib/matroskaproperties.h"
 	header "taglib/matroskatag.h"
 	header "taglib/matroskasimpletag.h"
