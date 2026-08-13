@@ -425,10 +425,15 @@ void RIFF::File::updateGlobalSize()
   const offset_t totalSize = last.offset + last.size + last.padding - first.offset + 12;
 
   if(d->isLongForm) {
-    // The sentinel at sizeOffset has to stay: writing a real size there makes readers
-    // stop consulting "ds64", which past 4 GB is the only place the size fits. The
-    // "data" chunk's own size and "ds64"'s copy of it are left alone because no write
-    // path here changes the audio.
+    // A long-form file always carries the sentinel here and its real size in "ds64"; any other
+    // value is malformed. Writing it unconditionally also repairs a file whose sentinel an
+    // older writer replaced with a real total, which past 4 GB is a truncated value that makes
+    // readers stop consulting "ds64" and believe it instead.
+    d->size = 0xffffffff;
+    insert(ByteVector::fromUInt(d->size, d->endianness == BigEndian), d->sizeOffset, 4);
+
+    // The "data" chunk's own size and "ds64"'s copy of it are left alone because no write path
+    // here changes the audio.
     if(d->ds64Offset > 0)
       insert(ByteVector::fromULongLong(totalSize, d->endianness == BigEndian),
              d->ds64Offset, 8);

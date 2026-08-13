@@ -118,6 +118,29 @@ final class RF64Tests {
         #expect(after.riffSize == after.fileSize - 8)
     }
 
+    /// A file an older TagLib damaged carries a real 32-bit total where the sentinel belongs —
+    /// past 4 GB a truncated one, which is what makes readers report milliseconds for hours of
+    /// audio. The value is malformed in a long-form file whatever its size, so a save writes the
+    /// sentinel back and the file reads correctly again everywhere.
+    @Test func saveRepairsAClobberedSentinel() throws {
+        let path = try makeCopy()
+        defer { try? FileManager.default.removeItem(atPath: path) }
+
+        let handle = try FileHandle(forWritingTo: URL(fileURLWithPath: path))
+        try handle.seek(toOffset: 4)
+        try handle.write(contentsOf: Data([0x6E, 0x14, 0x00, 0x00]))  // 5230, as an old save leaves it
+        try handle.close()
+
+        #expect(riffHeaderInfo(path).sizeField == 5230)
+
+        #expect(wavWriteProperties(path, "probe title", "probe artist"))
+
+        let after = riffHeaderInfo(path)
+        #expect(after.sizeField == 0xFFFF_FFFF)
+        #expect(after.riffSize == after.fileSize - 8)
+        #expect(after.dataSize == 9600)
+    }
+
     /// The long-form branch must not reach an ordinary WAV, whose 32-bit size field is real and
     /// has to keep tracking the file.
     @Test func plainRIFFStillGetsARealSize() throws {
