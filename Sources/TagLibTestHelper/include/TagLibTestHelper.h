@@ -50,6 +50,51 @@ ChapterReadResult neroChapterRead(const char *path);
 /// Returns true on success.
 bool neroChapterRemove(const char *path);
 
+// MARK: - RIFF / RF64
+
+/// Audio properties as TagLib reports them.
+typedef struct {
+    int lengthMs;
+    int bitrate;
+    int sampleRate;
+    int channels;
+} WavPropertiesResult;
+
+/// The 32-bit size field at offset 4 plus the fixed `ds64` fields, read straight from
+/// the file rather than through TagLib — an independent check on what a write left behind.
+typedef struct {
+    /// Four-character magic at offset 0.
+    char magic[5];
+    /// The 32-bit size field at offset 4. Must stay 0xFFFFFFFF for RF64/BW64.
+    unsigned int sizeField;
+    bool hasDS64;
+    long long riffSize;
+    long long dataSize;
+    long long sampleCount;
+    unsigned int tableLength;
+    /// Size of the file in bytes.
+    long long fileSize;
+    /// Declared 32-bit size of the `data` chunk, or -1 if there is none.
+    long long dataChunkDeclaredSize;
+    /// Offset of the `data` chunk's payload, or -1 if there is none.
+    long long dataChunkOffset;
+} RiffHeaderInfo;
+
+/// Whether TagLib's WAV reader accepts the file at `path`.
+bool wavIsSupported(const char *path);
+
+/// Writes TITLE and ARTIST through the property map. Returns true if the save succeeded.
+bool wavWriteProperties(const char *path, const char *title, const char *artist);
+
+/// Reads the property `key` into `out`. Returns false if the key is absent.
+bool wavReadProperty(const char *path, const char *key, char *out, int outSize);
+
+/// Reads the audio properties of the file at `path`.
+WavPropertiesResult wavAudioProperties(const char *path);
+
+/// Parses the RIFF header of the file at `path` directly, without going through TagLib.
+RiffHeaderInfo riffHeaderInfo(const char *path);
+
 // MARK: - File utilities
 
 /// Copies `src` to `dst`. Returns true on success.

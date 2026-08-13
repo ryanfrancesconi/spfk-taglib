@@ -6,6 +6,9 @@
 
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
+#include <taglib/tfilestream.h>
+#include <taglib/tpropertymap.h>
+#include <taglib/wavfile.h>
 
 #include <cstdint>
 #include <cstring>
@@ -121,6 +124,132 @@ bool neroChapterRemove(const char *path)
         return false;
     file.setNeroChapters(MP4::ChapterList());
     return file.save();
+}
+
+// MARK: - RIFF / RF64
+
+bool wavIsSupported(const char *path)
+{
+    FileStream stream(path, true);
+    return RIFF::WAV::File::isSupported(&stream);
+}
+
+bool wavWriteProperties(const char *path, const char *title, const char *artist)
+{
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return false;
+
+    PropertyMap map;
+    map.insert("TITLE", StringList(String(title, String::UTF8)));
+    map.insert("ARTIST", StringList(String(artist, String::UTF8)));
+
+    if(!file.setProperties(map).isEmpty())
+        return false;
+
+    return file.save();
+}
+
+bool wavReadProperty(const char *path, const char *key, char *out, int outSize)
+{
+    if(outSize > 0)
+        out[0] = '\0';
+
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return false;
+
+    const PropertyMap map = file.properties();
+    const auto it = map.find(String(key, String::UTF8));
+    if(it == map.end() || it->second.isEmpty())
+        return false;
+
+    const ByteVector utf8 = it->second.front().data(String::UTF8);
+    const size_t len = utf8.size() < static_cast<size_t>(outSize) - 1
+                           ? utf8.size()
+                           : static_cast<size_t>(outSize) - 1;
+    memcpy(out, utf8.data(), len);
+    out[len] = '\0';
+    return true;
+}
+
+WavPropertiesResult wavAudioProperties(const char *path)
+{
+    WavPropertiesResult result;
+    memset(&result, 0, sizeof(result));
+
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return result;
+
+    if(const auto *props = file.audioProperties()) {
+        result.lengthMs   = props->lengthInMilliseconds();
+        result.bitrate    = props->bitrate();
+        result.sampleRate = props->sampleRate();
+        result.channels   = props->channels();
+    }
+    return result;
+}
+
+RiffHeaderInfo riffHeaderInfo(const char *path)
+{
+    RiffHeaderInfo info;
+    memset(&info, 0, sizeof(info));
+    info.dataChunkDeclaredSize = -1;
+    info.dataChunkOffset = -1;
+    info.fileSize = -1;
+
+    std::ifstream f(path, std::ios::binary | std::ios::ate);
+    if(!f) return info;
+
+    info.fileSize = static_cast<long long>(f.tellg());
+    f.seekg(0, std::ios::beg);
+
+    auto readU32 = [&f]() -> unsigned int {
+        unsigned char b[4] = {0, 0, 0, 0};
+        f.read(reinterpret_cast<char *>(b), 4);
+        return static_cast<unsigned int>(b[0]) | static_cast<unsigned int>(b[1]) << 8 |
+               static_cast<unsigned int>(b[2]) << 16 | static_cast<unsigned int>(b[3]) << 24;
+    };
+    auto readU64 = [&readU32]() -> long long {
+        const unsigned long long lo = readU32();
+        const unsigned long long hi = readU32();
+        return static_cast<long long>(lo | hi << 32);
+    };
+
+    f.read(info.magic, 4);
+    info.magic[4] = '\0';
+    info.sizeField = readU32();
+
+    long long offset = 12;
+    while(offset + 8 <= info.fileSize) {
+        f.seekg(offset);
+        char name[5] = {0, 0, 0, 0, 0};
+        f.read(name, 4);
+        const unsigned int declared = readU32();
+
+        long long advance = declared;
+
+        if(memcmp(name, "ds64", 4) == 0 && declared >= 28) {
+            info.hasDS64 = true;
+            info.riffSize = readU64();
+            info.dataSize = readU64();
+            info.sampleCount = readU64();
+            info.tableLength = readU32();
+        }
+        else if(memcmp(name, "data", 4) == 0) {
+            info.dataChunkDeclaredSize = declared;
+            info.dataChunkOffset = offset + 8;
+            if(declared == 0xffffffffu) {
+                if(!info.hasDS64) break;
+                advance = info.dataSize;
+            }
+        }
+
+        offset += 8 + advance + (advance % 2);
+    }
+
+    return info;
 }
 
 // MARK: - File utilities
