@@ -25,6 +25,8 @@
 
 #include "asffile.h"
 
+#include <limits>
+
 #include <utility>
 
 #include "tdebug.h"
@@ -89,6 +91,7 @@ namespace
   const ByteVector contentEncryptionGuid("\xFB\xB3\x11\x22\x23\xBD\xD2\x11\xB4\xB7\x00\xA0\xC9\x55\xFC\x6E", 16);
   const ByteVector extendedContentEncryptionGuid("\x14\xE6\x8A\x29\x22\x26 \x17\x4C\xB9\x35\xDA\xE0\x7E\xE9\x28\x9C", 16);
   const ByteVector advancedContentEncryptionGuid("\xB6\x9B\x07\x7A\xA4\xDA\x12\x4E\xA5\xCA\x91\xD3\x8D\xC1\x1A\x8D", 16);
+  constexpr unsigned int MAX_ASF_HEADER_EXTENSION_OBJECT_COUNT = 50000;
 
   bool attributeDataFits(File *file, long long size, offset_t &end)
   {
@@ -236,8 +239,14 @@ void ASF::File::FilePrivate::FilePropertiesObject::parse(ASF::File *file, long l
 
   const long long duration = data.toLongLong(40, false);
   const long long preroll  = data.toLongLong(56, false);
-  file->d->properties->setLengthInMilliseconds(
-    static_cast<int>(static_cast<double>(duration) / 10000.0 - static_cast<double>(preroll) + 0.5));
+  // duration and preroll are both read from the file, so the result can land outside
+  // int, and converting a double the destination type cannot represent is undefined.
+  const double milliseconds =
+    static_cast<double>(duration) / 10000.0 - static_cast<double>(preroll) + 0.5;
+
+  if(milliseconds > static_cast<double>(std::numeric_limits<int>::min()) &&
+     milliseconds < static_cast<double>(std::numeric_limits<int>::max()))
+    file->d->properties->setLengthInMilliseconds(static_cast<int>(milliseconds));
 }
 
 ByteVector ASF::File::FilePrivate::StreamPropertiesObject::guid() const
@@ -321,8 +330,9 @@ void ASF::File::FilePrivate::ExtendedContentDescriptionObject::parse(ASF::File *
     }
 
     ASF::Attribute attribute;
-    String name = attribute.parse(*file);
-    file->d->tag->addAttribute(name, attribute);
+    if(String name = attribute.parse(*file); !name.isEmpty()) {
+      file->d->tag->addAttribute(name, attribute);
+    }
 
     if(file->tell() > end) {
       file->setValid(false);
@@ -360,8 +370,9 @@ void ASF::File::FilePrivate::MetadataObject::parse(ASF::File *file, long long si
     }
 
     ASF::Attribute attribute;
-    String name = attribute.parse(*file, 1);
-    file->d->tag->addAttribute(name, attribute);
+    if(String name = attribute.parse(*file, 1); !name.isEmpty()) {
+      file->d->tag->addAttribute(name, attribute);
+    }
 
     if(file->tell() > end) {
       file->setValid(false);
@@ -399,8 +410,9 @@ void ASF::File::FilePrivate::MetadataLibraryObject::parse(ASF::File *file, long 
     }
 
     ASF::Attribute attribute;
-    String name = attribute.parse(*file, 2);
-    file->d->tag->addAttribute(name, attribute);
+    if(String name = attribute.parse(*file, 2); !name.isEmpty()) {
+      file->d->tag->addAttribute(name, attribute);
+    }
 
     if(file->tell() > end) {
       file->setValid(false);
@@ -427,20 +439,39 @@ ByteVector ASF::File::FilePrivate::HeaderExtensionObject::guid() const
   return headerExtensionGuid;
 }
 
-void ASF::File::FilePrivate::HeaderExtensionObject::parse(ASF::File *file, long long /*size*/)
+void ASF::File::FilePrivate::HeaderExtensionObject::parse(ASF::File *file, long long size)
 {
+  // The object header is 24 bytes. The extension header contains an 18-byte
+  // reserved field and a 4-byte data size before the child objects.
+  if(size < 46) {
+    file->setValid(false);
+    return;
+  }
+
   file->seek(18, File::Current);
-  long long dataSize = readDWORD(file);
+  bool ok;
+  const long long dataSize = readDWORD(file, &ok);
+  if(!ok || dataSize > size - 46) {
+    file->setValid(false);
+    return;
+  }
+
   long long dataPos = 0;
+  unsigned int objectCount = 0;
   while(dataPos < dataSize) {
+    if(objectCount++ >= MAX_ASF_HEADER_EXTENSION_OBJECT_COUNT) {
+      debug("ASF::HeaderExtensionObject::parse(): Maximum child object count exceeded.");
+      file->setValid(false);
+      break;
+    }
+
     ByteVector uid = file->readBlock(16);
     if(uid.size() != 16) {
       file->setValid(false);
       break;
     }
-    bool ok;
-    long long size = readQWORD(file, &ok);
-    if(!ok || size < 0 || size > dataSize - dataPos) {
+    const long long childSize = readQWORD(file, &ok);
+    if(!ok || childSize < 24 || childSize > dataSize - dataPos) {
       file->setValid(false);
       break;
     }
@@ -456,9 +487,9 @@ void ASF::File::FilePrivate::HeaderExtensionObject::parse(ASF::File *file, long 
     else {
       obj = new UnknownObject(uid);
     }
-    obj->parse(file, size);
+    obj->parse(file, childSize);
     objects.append(obj);
-    dataPos += size;
+    dataPos += childSize;
   }
 }
 
