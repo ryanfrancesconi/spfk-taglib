@@ -28,7 +28,7 @@ On tagged upstream releases, bump `SPFK_TAGLIB_UPSTREAM_VERSION` in `Sources/tag
 
 This package uses its own semantic versioning starting at `1.0.0`, independent of upstream TagLib version numbers. The upstream TagLib revision is tracked in `taglib_config.h`.
 
-## Usage
+## Installation
 
 Add to your `Package.swift`:
 
