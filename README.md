@@ -21,6 +21,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
 | `FileStream::setMoveBufferSize()` — a per-stream buffer size for `insert()` and `removeBlock()`, the default unchanged | `adf0284`; `383fc26` | `toolkit/tfilestream.h`, `toolkit/tfilestream.cpp` | carried; PR not opened |
+| Matroska: an element size exactly at a size length's limit (127, 16383, …) is rendered with the next length instead of as "unknown size" | (this commit) | `matroska/ebml/ebmlutils.h` | carried; PR not opened |
 
 ## Structure
 

@@ -95,6 +95,16 @@ WavPropertiesResult wavAudioProperties(const char *path);
 /// Parses the RIFF header of the file at `path` directly, without going through TagLib.
 RiffHeaderInfo riffHeaderInfo(const char *path);
 
+// MARK: - Matroska
+
+/// Sets the property `key` to `value` through the property map, keeping every other property, and
+/// saves. Returns false if the file could not be opened or saved.
+bool mkvSetProperty(const char *path, const char *key, const char *value);
+
+/// The length in bytes of the property `key`'s first value as TagLib reads it back, or -1 if absent.
+/// `out` receives up to `outSize - 1` bytes of it.
+long long mkvReadProperty(const char *path, const char *key, char *out, long long outSize);
+
 // MARK: - FileStream moves
 
 /// `FileStream::insert` on the file at `path`, through a move buffer of `moveBufferSize` bytes

@@ -59,17 +59,19 @@ namespace TagLib {
 
     unsigned long long randomUID();
 
+    // A size whose value bits are all 1 means "unknown size" (RFC 8794 section 6.2),
+    // so each length holds one less than its bits could.
     constexpr int minSize(uint64_t data)
     {
-      if(data <= 0x7Fu)
+      if(data < 0x7Fu)
         return 1;
-      if(data <= 0x3FFFu)
+      if(data < 0x3FFFu)
         return 2;
-      if(data <= 0x1FFFFFu)
+      if(data < 0x1FFFFFu)
         return 3;
-      if(data <= 0xFFFFFFFu)
+      if(data < 0xFFFFFFFu)
         return 4;
-      if(data <= 0x7FFFFFFFFu)
+      if(data < 0x7FFFFFFFFu)
         return 5;
       return 0;
     }

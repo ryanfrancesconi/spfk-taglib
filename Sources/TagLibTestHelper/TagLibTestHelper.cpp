@@ -4,12 +4,14 @@
 
 #include "TagLibTestHelper.h"
 
+#include <taglib/matroskafile.h>
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
 #include <taglib/tfilestream.h>
 #include <taglib/tpropertymap.h>
 #include <taglib/wavfile.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -253,6 +255,34 @@ RiffHeaderInfo riffHeaderInfo(const char *path)
 }
 
 // MARK: - File utilities
+
+// MARK: - Matroska
+
+bool mkvSetProperty(const char *path, const char *key, const char *value)
+{
+    Matroska::File file(path);
+    if(!file.isValid() || file.readOnly()) return false;
+    PropertyMap properties = file.properties();
+    properties.replace(String(key, String::UTF8), StringList(String(value, String::UTF8)));
+    file.setProperties(properties);
+    return file.save();
+}
+
+long long mkvReadProperty(const char *path, const char *key, char *out, long long outSize)
+{
+    Matroska::File file(path);
+    if(!file.isValid()) return -1;
+    const PropertyMap properties = file.properties();
+    const auto it = properties.find(String(key, String::UTF8));
+    if(it == properties.end() || it->second.isEmpty()) return -1;
+    const ByteVector data = it->second.front().data(String::UTF8);
+    if(out && outSize > 0) {
+        const auto count = std::min<long long>(data.size(), outSize - 1);
+        std::memcpy(out, data.data(), static_cast<size_t>(count));
+        out[count] = '\0';
+    }
+    return data.size();
+}
 
 // MARK: - FileStream moves
 
