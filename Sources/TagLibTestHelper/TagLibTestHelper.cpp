@@ -254,6 +254,35 @@ RiffHeaderInfo riffHeaderInfo(const char *path)
 
 // MARK: - File utilities
 
+// MARK: - FileStream moves
+
+bool streamInsert(const char *path, const void *data, unsigned int size,
+                  long long start, unsigned int replace, unsigned int moveBufferSize)
+{
+    FileStream stream(path);
+    if(!stream.isOpen() || stream.readOnly()) return false;
+    stream.setMoveBufferSize(moveBufferSize);
+    stream.insert(ByteVector(static_cast<const char *>(data), size), start, replace);
+    return true;
+}
+
+bool streamRemoveBlock(const char *path, long long start, unsigned int length,
+                       unsigned int moveBufferSize)
+{
+    FileStream stream(path);
+    if(!stream.isOpen() || stream.readOnly()) return false;
+    stream.setMoveBufferSize(moveBufferSize);
+    stream.removeBlock(start, length);
+    return true;
+}
+
+unsigned int streamMoveBufferSize(unsigned int size)
+{
+    FileStream stream("/dev/null", true);
+    stream.setMoveBufferSize(size);
+    return stream.moveBufferSize();
+}
+
 bool copyTestFile(const char *src, const char *dst)
 {
     std::ifstream in(src, std::ios::binary);

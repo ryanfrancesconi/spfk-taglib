@@ -151,6 +151,7 @@ public:
   FileHandle file { InvalidFileHandle };
   FileNameHandle name;
   bool readOnly { true };
+  unsigned int moveBufferSize { 0 };
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -280,10 +281,10 @@ void FileStream::insert(const ByteVector &data, offset_t start, size_t replace)
   // the *difference* in the tag sizes.  We want to avoid overwriting parts
   // that aren't yet in memory, so this is necessary.
 
-  size_t bufferLength = bufferSize();
+  size_t bufferLength = moveBufferSize();
 
   while(data.size() - replace > bufferLength)
-    bufferLength += bufferSize();
+    bufferLength += moveBufferSize();
 
   // Set where to start the reading and writing.
 
@@ -334,7 +335,7 @@ void FileStream::removeBlock(offset_t start, size_t length)
     return;
   }
 
-  unsigned int bufferLength = bufferSize();
+  unsigned int bufferLength = moveBufferSize();
 
   offset_t readPosition = start + length;
   offset_t writePosition = start;
@@ -514,4 +515,14 @@ void FileStream::truncate(offset_t length)
 unsigned int FileStream::bufferSize()
 {
   return 1024;
+}
+
+void FileStream::setMoveBufferSize(unsigned int size)
+{
+  d->moveBufferSize = size;
+}
+
+unsigned int FileStream::moveBufferSize() const
+{
+  return d->moveBufferSize > 0 ? d->moveBufferSize : bufferSize();
 }

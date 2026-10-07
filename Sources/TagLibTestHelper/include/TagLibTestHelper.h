@@ -95,6 +95,20 @@ WavPropertiesResult wavAudioProperties(const char *path);
 /// Parses the RIFF header of the file at `path` directly, without going through TagLib.
 RiffHeaderInfo riffHeaderInfo(const char *path);
 
+// MARK: - FileStream moves
+
+/// `FileStream::insert` on the file at `path`, through a move buffer of `moveBufferSize` bytes
+/// (0 for the default). Returns false if the file could not be opened for writing.
+bool streamInsert(const char *path, const void *data, unsigned int size,
+                  long long start, unsigned int replace, unsigned int moveBufferSize);
+
+/// `FileStream::removeBlock` on the file at `path`, as `streamInsert`.
+bool streamRemoveBlock(const char *path, long long start, unsigned int length,
+                       unsigned int moveBufferSize);
+
+/// The move buffer size a new `FileStream` uses, and what `setMoveBufferSize(size)` then reports.
+unsigned int streamMoveBufferSize(unsigned int size);
+
 // MARK: - File utilities
 
 /// Copies `src` to `dst`. Returns true on success.
