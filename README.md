@@ -12,6 +12,15 @@ spfk-taglib is an independent SPM repackaging of [taglib/taglib](https://github.
 
 The current upstream base is **TagLib 2.3.2** (tracked via `SPFK_TAGLIB_UPSTREAM_VERSION` in `taglib_config.h`).
 
+## Changes Not Yet in Upstream
+
+`Sources/taglib/` is upstream plus the changes below. Each is its own set of commits here and becomes
+its own pull request to taglib/taglib; it leaves this list when a sync brings it back in from upstream.
+
+| Change | Commits | Files | Upstream PR |
+| --- | --- | --- | --- |
+| `FileStream::setMoveBufferSize()` — a per-stream buffer size for `insert()` and `removeBlock()`, the default unchanged | `adf0284` | `toolkit/tfilestream.h`, `toolkit/tfilestream.cpp` | not opened |
+
 ## Structure
 
 Public headers are colocated with their implementations (matching upstream) and exposed to SPM via symlinks in `include/taglib/`. A `module.modulemap` defines the `taglib` and `taglib_c` modules. Run `scripts/update-symlinks.sh` after adding or removing public headers.
@@ -19,6 +28,8 @@ Public headers are colocated with their implementations (matching upstream) and 
 ## Syncing with Upstream
 
 The directory layout mirrors upstream TagLib, so syncing is a bulk mirror of upstream's `taglib/` directory into `Sources/taglib/` via `rsync --delete`, preserving the SPM-specific paths (`include/`, `utfcpp/`, `toolkit/taglib_config.h`) and stripping build-system files (`CMakeLists.txt`, `*.cmake`, etc.).
+
+The mirror overwrites every change in [Changes Not Yet in Upstream](#changes-not-yet-in-upstream). Re-apply each one still listed after it, as its own commit, then run the tests.
 
 For new format modules introduced upstream, add the corresponding `headerSearchPath` entries to `Package.swift`, add public headers to `module.modulemap`, and run `scripts/update-symlinks.sh`.
 
