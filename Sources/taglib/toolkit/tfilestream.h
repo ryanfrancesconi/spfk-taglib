@@ -139,22 +139,6 @@ namespace TagLib {
      */
     void truncate(offset_t length) override;
 
-    /*!
-     * Sets the size of the buffer that insert() and removeBlock() move the
-     * rest of the file through, in bytes.  Each block costs a seek, a read, a
-     * seek and a write, so a larger buffer makes moving a large file much
-     * faster.  0 restores the default, bufferSize().  Reading, searching and
-     * format detection are unaffected.
-     */
-    void setMoveBufferSize(unsigned int size);
-
-    /*!
-     * Returns the size of the buffer that insert() and removeBlock() use.
-     *
-     * \see setMoveBufferSize()
-     */
-    unsigned int moveBufferSize() const;
-
   protected:
 
     /*!
