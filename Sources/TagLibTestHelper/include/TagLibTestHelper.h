@@ -105,6 +105,27 @@ bool mkvSetProperty(const char *path, const char *key, const char *value);
 /// `out` receives up to `outSize - 1` bytes of it.
 long long mkvReadProperty(const char *path, const char *key, char *out, long long outSize);
 
+/// Sets the property `key` to `value`, adds an attached file holding `size` bytes of `data`, and
+/// saves with `WriteStyle::AvoidInsert` when `avoidInsert`, `WriteStyle::Compact` otherwise.
+bool mkvSetPropertyAndAttach(const char *path, const char *key, const char *value,
+                             const void *data, unsigned int size, bool avoidInsert);
+
+/// The number of attached files TagLib reads back, or -1 if the file is not valid.
+int mkvAttachedFileCount(const char *path);
+
+/// The Segment's top-level elements, read straight from the file rather than through TagLib.
+typedef struct {
+    /// Whether every top-level element in the Segment has a valid ID and size, and the last ends
+    /// exactly where the Segment's declared size does.
+    bool contiguous;
+    long long segmentEnd;
+    long long fileSize;
+    /// Offset of the first Cluster, or -1 if there is none.
+    long long firstClusterOffset;
+} MkvSegmentLayout;
+
+MkvSegmentLayout mkvSegmentLayout(const char *path);
+
 // MARK: - FileStream moves
 
 /// `FileStream::insert` on the file at `path`, through a move buffer of `moveBufferSize` bytes

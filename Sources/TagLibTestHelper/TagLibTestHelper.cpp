@@ -4,6 +4,8 @@
 
 #include "TagLibTestHelper.h"
 
+#include <taglib/matroskaattachedfile.h>
+#include <taglib/matroskaattachments.h>
 #include <taglib/matroskafile.h>
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
@@ -15,6 +17,8 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <iterator>
+#include <vector>
 
 using namespace TagLib;
 
@@ -282,6 +286,99 @@ long long mkvReadProperty(const char *path, const char *key, char *out, long lon
         out[count] = '\0';
     }
     return data.size();
+}
+
+bool mkvSetPropertyAndAttach(const char *path, const char *key, const char *value,
+                             const void *data, unsigned int size, bool avoidInsert)
+{
+    Matroska::File file(path);
+    if(!file.isValid() || file.readOnly()) return false;
+    PropertyMap properties = file.properties();
+    properties.replace(String(key, String::UTF8), StringList(String(value, String::UTF8)));
+    file.setProperties(properties);
+    file.attachments(true)->addAttachedFile(Matroska::AttachedFile(
+        ByteVector(static_cast<const char *>(data), size), "cover.jpg", "image/jpeg"));
+    return file.save(avoidInsert ? Matroska::WriteStyle::AvoidInsert : Matroska::WriteStyle::Compact);
+}
+
+int mkvAttachedFileCount(const char *path)
+{
+    Matroska::File file(path);
+    if(!file.isValid()) return -1;
+    const auto *attachments = file.attachments();
+    return attachments ? static_cast<int>(attachments->attachedFileList().size()) : 0;
+}
+
+namespace {
+
+// An EBML ID's length from its first byte (1-4), or 0 if the byte cannot start one.
+int ebmlIDLength(uint8_t first)
+{
+    for(int length = 1; length <= 4; ++length) {
+        if(first & (0x80 >> (length - 1))) return length;
+    }
+    return 0;
+}
+
+// Reads an EBML variable-length size at `offset`; false if it runs off `bytes`.
+bool ebmlSize(const std::vector<uint8_t> &bytes, size_t offset, long long &value, int &length)
+{
+    if(offset >= bytes.size()) return false;
+    const uint8_t first = bytes[offset];
+    length = 0;
+    for(int candidate = 1; candidate <= 8; ++candidate) {
+        if(first & (0x80 >> (candidate - 1))) { length = candidate; break; }
+    }
+    if(length == 0 || offset + length > bytes.size()) return false;
+    value = first & ((0x80 >> (length - 1)) - 1);
+    for(int index = 1; index < length; ++index) value = (value << 8) | bytes[offset + index];
+    return true;
+}
+
+} // namespace
+
+MkvSegmentLayout mkvSegmentLayout(const char *path)
+{
+    MkvSegmentLayout layout { false, -1, -1, -1 };
+
+    std::ifstream stream(path, std::ios::binary);
+    const std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    layout.fileSize = static_cast<long long>(bytes.size());
+
+    size_t offset = 0;
+    while(offset < bytes.size()) {
+        const int idLength = ebmlIDLength(bytes[offset]);
+        long long size = 0;
+        int sizeLength = 0;
+        if(idLength == 0 || !ebmlSize(bytes, offset + idLength, size, sizeLength)) return layout;
+
+        uint32_t id = 0;
+        for(int index = 0; index < idLength; ++index) id = (id << 8) | bytes[offset + index];
+        const size_t dataOffset = offset + idLength + sizeLength;
+
+        if(id != 0x18538067) {
+            offset = dataOffset + static_cast<size_t>(size);
+            continue;
+        }
+
+        layout.segmentEnd = static_cast<long long>(dataOffset) + size;
+        size_t child = dataOffset;
+        while(child < static_cast<size_t>(layout.segmentEnd)) {
+            const int childIDLength = child < bytes.size() ? ebmlIDLength(bytes[child]) : 0;
+            long long childSize = 0;
+            int childSizeLength = 0;
+            if(childIDLength == 0 || !ebmlSize(bytes, child + childIDLength, childSize, childSizeLength)) return layout;
+
+            uint32_t childID = 0;
+            for(int index = 0; index < childIDLength; ++index) childID = (childID << 8) | bytes[child + index];
+            if(childID == 0x1F43B675 && layout.firstClusterOffset < 0) layout.firstClusterOffset = static_cast<long long>(child);
+
+            child += childIDLength + childSizeLength + static_cast<size_t>(childSize);
+        }
+        layout.contiguous = child == static_cast<size_t>(layout.segmentEnd);
+        return layout;
+    }
+    return layout;
 }
 
 // MARK: - FileStream moves
