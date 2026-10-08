@@ -24,6 +24,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | Matroska: an element size exactly at a size length's limit (127, 16383, …) is rendered with the next length instead of as "unknown size" | `cfbd141` | `matroska/ebml/ebmlutils.h` | carried; PR not opened |
 | Matroska `WriteStyle::AvoidInsert`: a save that moves an existing element to the end and adds a new one lays the new element out with the moved ones, instead of past the end of the file with zero bytes before it | `1e5e467` | `matroska/matroskafile.cpp` | carried; PR not opened |
 | `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once; `bytesToMove()` and `writeTo()` let a caller write the result elsewhere instead | `26c64c2`, `3394281` | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap` | carried; PR not opened |
+| MP4 QuickTime chapters: a list whose first chapter starts after 0 covers the leading placeholder chapter with an empty edit, so players honoring the edit list (AVFoundation, ffmpeg) do not show it as an untitled first chapter; the placeholder stays for players that ignore edit lists | `c3a326a` | `mp4/mp4qtchapterlist.cpp` | carried; PR not opened |
 
 ## Structure
 
