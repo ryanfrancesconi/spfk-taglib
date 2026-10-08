@@ -140,6 +140,23 @@ bool streamRemoveBlock(const char *path, long long start, unsigned int length,
 /// The move buffer size a new `FileStream` uses, and what `setMoveBufferSize(size)` then reports.
 unsigned int streamMoveBufferSize(unsigned int size);
 
+// MARK: - DeferredWriteStream
+
+/// Applies `operations` seeded random writes, insertions, removals and truncations to a
+/// `DeferredWriteStream` over the file at `path` and to a `ByteVectorStream` holding the same bytes,
+/// comparing their whole content after each one, then commits and compares the file. Returns -1
+/// when everything matched, the index of the first operation after which the contents differed, or
+/// `operations` when only the committed file differed.
+int deferredStreamFuzz(const char *path, unsigned int seed, int operations);
+
+/// The bytes a commit writes to the file at `path` after inserting `insertSize` bytes at
+/// `insertAt` and then removing `removeSize` bytes at `removeAt`; -1 if the commit failed.
+long long deferredStreamCommitBytes(const char *path, long long insertAt, unsigned int insertSize,
+                                    long long removeAt, unsigned int removeSize);
+
+/// Whether a commit over a read-only stream with recorded changes is refused.
+bool deferredStreamRefusesReadOnlyCommit(const char *path);
+
 // MARK: - File utilities
 
 /// Copies `src` to `dst`. Returns true on success.

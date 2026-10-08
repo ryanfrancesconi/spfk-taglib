@@ -23,6 +23,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | `FileStream::setMoveBufferSize()` — a per-stream buffer size for `insert()` and `removeBlock()`, the default unchanged | `adf0284`; `383fc26` | `toolkit/tfilestream.h`, `toolkit/tfilestream.cpp` | carried; PR not opened |
 | Matroska: an element size exactly at a size length's limit (127, 16383, …) is rendered with the next length instead of as "unknown size" | `cfbd141` | `matroska/ebml/ebmlutils.h` | carried; PR not opened |
 | Matroska `WriteStyle::AvoidInsert`: a save that moves an existing element to the end and adds a new one lays the new element out with the moved ones, instead of past the end of the file with zero bytes before it | `1e5e467` | `matroska/matroskafile.cpp` | carried; PR not opened |
+| `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once | (this commit) | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap` | carried; PR not opened |
 
 ## Structure
 

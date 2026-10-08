@@ -9,6 +9,8 @@
 #include <taglib/matroskafile.h>
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
+#include <taglib/tbytevectorstream.h>
+#include <taglib/tdeferredwritestream.h>
 #include <taglib/tfilestream.h>
 #include <taglib/tpropertymap.h>
 #include <taglib/wavfile.h>
@@ -17,6 +19,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <random>
 #include <iterator>
 #include <vector>
 
@@ -379,6 +382,136 @@ MkvSegmentLayout mkvSegmentLayout(const char *path)
         return layout;
     }
     return layout;
+}
+
+// MARK: - DeferredWriteStream
+
+namespace {
+
+ByteVector readWholeFile(const char *path)
+{
+    std::ifstream stream(path, std::ios::binary);
+    const std::vector<char> bytes((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+    return ByteVector(bytes.data(), static_cast<unsigned int>(bytes.size()));
+}
+
+ByteVector wholeContent(IOStream &stream)
+{
+    stream.seek(0);
+    return stream.readBlock(static_cast<size_t>(stream.length()));
+}
+
+class CountingFileStream : public FileStream {
+public:
+    using FileStream::FileStream;
+    long long written = 0;
+
+    void writeBlock(const ByteVector &data) override
+    {
+        written += data.size();
+        FileStream::writeBlock(data);
+    }
+};
+
+} // namespace
+
+int deferredStreamFuzz(const char *path, unsigned int seed, int operations)
+{
+    FileStream file(path);
+    if(!file.isOpen() || file.readOnly()) return 0;
+
+    ByteVectorStream reference(readWholeFile(path));
+    DeferredWriteStream deferred(&file);
+    std::mt19937 random(seed);
+
+    auto below = [&random](long long bound) {
+        return bound <= 0 ? 0LL : static_cast<long long>(random() % static_cast<unsigned long long>(bound));
+    };
+    auto bytes = [&random](long long count) {
+        ByteVector data(static_cast<unsigned int>(count));
+        for(unsigned int i = 0; i < data.size(); ++i) data[i] = static_cast<char>(random());
+        return data;
+    };
+
+    for(int operation = 0; operation < operations; ++operation) {
+        const long long length = reference.length();
+
+        // Weighted so most of the original content survives to be moved by the commit.
+        const unsigned int kind = random() % 20;
+        switch(kind < 6 ? 0 : kind < 12 ? 1 : kind < 17 ? 2 : kind < 18 ? 3 : 4) {
+        case 0: {
+            const long long at = below(length + 16);
+            const ByteVector data = bytes(1 + below(300));
+            reference.seek(at);
+            reference.writeBlock(data);
+            deferred.seek(at);
+            deferred.writeBlock(data);
+            break;
+        }
+        case 1: {
+            const long long at = below(length + 1);
+            const size_t replace = static_cast<size_t>(below(std::min(length - at, 64LL) + 1));
+            const ByteVector data = bytes(below(2000));
+            reference.insert(data, at, replace);
+            deferred.insert(data, at, replace);
+            break;
+        }
+        case 2: {
+            const long long at = below(length + 1);
+            const size_t count = static_cast<size_t>(below(std::min(length - at, 2000LL) + 1));
+            reference.removeBlock(at, count);
+            deferred.removeBlock(at, count);
+            break;
+        }
+        case 3: {
+            const long long to = std::max(0LL, length - 64 + below(128));
+            reference.truncate(to);
+            deferred.truncate(to);
+            break;
+        }
+        default: {
+            const long long at = below(length + 1);
+            const size_t count = static_cast<size_t>(below(500));
+            reference.seek(at);
+            deferred.seek(at);
+            if(reference.readBlock(count) != deferred.readBlock(count)) return operation;
+            if(reference.tell() != deferred.tell()) return operation;
+            break;
+        }
+        }
+
+        if(reference.length() != deferred.length() || wholeContent(reference) != wholeContent(deferred))
+            return operation;
+    }
+
+    if(!deferred.commit()) return operations;
+    file.seek(0);
+    const ByteVector committed = file.readBlock(static_cast<size_t>(file.length()));
+    if(committed != *reference.data() || wholeContent(deferred) != *reference.data()) return operations;
+    return -1;
+}
+
+long long deferredStreamCommitBytes(const char *path, long long insertAt, unsigned int insertSize,
+                                    long long removeAt, unsigned int removeSize)
+{
+    CountingFileStream file(path);
+    if(!file.isOpen() || file.readOnly()) return -1;
+
+    DeferredWriteStream deferred(&file);
+    deferred.insert(ByteVector(insertSize, 'x'), insertAt, 0);
+    deferred.removeBlock(removeAt, removeSize);
+
+    file.written = 0;
+    return deferred.commit() ? file.written : -1;
+}
+
+bool deferredStreamRefusesReadOnlyCommit(const char *path)
+{
+    FileStream file(path, true);
+    DeferredWriteStream deferred(&file);
+    deferred.insert(ByteVector("x", 1), 0, 0);
+    const ByteVector before = readWholeFile(path);
+    return !deferred.commit() && readWholeFile(path) == before;
 }
 
 // MARK: - FileStream moves

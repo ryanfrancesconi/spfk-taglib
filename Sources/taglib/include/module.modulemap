@@ -15,6 +15,7 @@ module taglib {
 	header "taglib/tbytevectorlist.h"
 	header "taglib/tvariant.h"
 	header "taglib/tbytevectorstream.h"
+	header "taglib/tdeferredwritestream.h"
 	header "taglib/tiostream.h"
 	header "taglib/tfile.h"
 	header "taglib/tfilestream.h"
