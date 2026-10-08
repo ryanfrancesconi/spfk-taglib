@@ -309,6 +309,33 @@ bool DeferredWriteStream::hasChanges() const
   return d->changed;
 }
 
+offset_t DeferredWriteStream::bytesToMove() const
+{
+  offset_t total = 0;
+  for(size_t i = 0; i < d->pieces.size(); ++i) {
+    if(d->pieces[i].isOriginal && d->starts[i] != d->pieces[i].source)
+      total += d->pieces[i].size;
+  }
+  return total;
+}
+
+bool DeferredWriteStream::writeTo(IOStream *destination)
+{
+  if(!destination->isOpen() || destination->readOnly()) {
+    debug("DeferredWriteStream::writeTo() -- destination is not writable.");
+    return false;
+  }
+
+  const offset_t length = d->contentLength();
+  destination->seek(0);
+  for(offset_t done = 0; done < length; done += moveBlockSize) {
+    destination->writeBlock(d->read(done, std::min(moveBlockSize, length - done)));
+  }
+  if(destination->length() > length)
+    destination->truncate(length);
+  return true;
+}
+
 FileName DeferredWriteStream::name() const
 {
   return d->stream->name();

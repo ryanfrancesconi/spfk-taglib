@@ -146,8 +146,13 @@ unsigned int streamMoveBufferSize(unsigned int size);
 /// `DeferredWriteStream` over the file at `path` and to a `ByteVectorStream` holding the same bytes,
 /// comparing their whole content after each one, then commits and compares the file. Returns -1
 /// when everything matched, the index of the first operation after which the contents differed, or
-/// `operations` when only the committed file differed.
-int deferredStreamFuzz(const char *path, unsigned int seed, int operations);
+/// `operations` when only the committed file differed. `copyPath`, an existing file, also receives
+/// the content through `writeTo` before the commit; -2 when that copy differed.
+int deferredStreamFuzz(const char *path, const char *copyPath, unsigned int seed, int operations);
+
+/// `bytesToMove()` after one edit of the file at `path`: 0 overwrites 16 bytes at 100, 1 appends 16,
+/// 2 inserts 16 at 100, 3 removes 16 at 100.
+long long deferredStreamBytesToMove(const char *path, int edit);
 
 /// The bytes a commit writes to the file at `path` after inserting `insertSize` bytes at
 /// `insertAt` and then removing `removeSize` bytes at `removeAt`; -1 if the commit failed.

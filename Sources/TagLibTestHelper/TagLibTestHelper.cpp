@@ -415,7 +415,7 @@ public:
 
 } // namespace
 
-int deferredStreamFuzz(const char *path, unsigned int seed, int operations)
+int deferredStreamFuzz(const char *path, const char *copyPath, unsigned int seed, int operations)
 {
     FileStream file(path);
     if(!file.isOpen() || file.readOnly()) return 0;
@@ -484,6 +484,12 @@ int deferredStreamFuzz(const char *path, unsigned int seed, int operations)
             return operation;
     }
 
+    {
+        FileStream copy(copyPath);
+        if(!deferred.writeTo(&copy)) return -2;
+    }
+    if(readWholeFile(copyPath) != *reference.data()) return -2;
+
     if(!deferred.commit()) return operations;
     file.seek(0);
     const ByteVector committed = file.readBlock(static_cast<size_t>(file.length()));
@@ -503,6 +509,21 @@ long long deferredStreamCommitBytes(const char *path, long long insertAt, unsign
 
     file.written = 0;
     return deferred.commit() ? file.written : -1;
+}
+
+long long deferredStreamBytesToMove(const char *path, int edit)
+{
+    FileStream file(path);
+    DeferredWriteStream deferred(&file);
+    const ByteVector data(16, 'x');
+
+    switch(edit) {
+    case 0: deferred.seek(100); deferred.writeBlock(data); break;
+    case 1: deferred.seek(0, IOStream::End); deferred.writeBlock(data); break;
+    case 2: deferred.insert(data, 100, 0); break;
+    default: deferred.removeBlock(100, 16); break;
+    }
+    return deferred.bytesToMove();
 }
 
 bool deferredStreamRefusesReadOnlyCommit(const char *path)

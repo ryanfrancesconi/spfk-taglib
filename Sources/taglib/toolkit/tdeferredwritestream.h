@@ -81,6 +81,20 @@ namespace TagLib {
     bool hasChanges() const;
 
     /*!
+     * Returns how many bytes of the underlying stream commit() would move to
+     * a new position; 0 when it would only overwrite or append.
+     */
+    offset_t bytesToMove() const;
+
+    /*!
+     * Writes the content, changes included, to \a destination from its
+     * start, truncating it to the content's length. The underlying stream and
+     * the recorded changes are left as they are. Returns \c false if
+     * \a destination is read only or not open.
+     */
+    bool writeTo(IOStream *destination);
+
+    /*!
      * Returns the underlying stream's name.
      */
     FileName name() const override;

@@ -23,10 +23,17 @@ struct DeferredWriteStreamTests {
     @Test(arguments: 0 ..< 200)
     func randomEditsMatchAnInMemoryStream(seed: Int) throws {
         let url = try file(20000)
-        defer { try? FileManager.default.removeItem(at: url) }
+        let copy = try file(1)
+        defer {
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: copy)
+        }
 
         let result = url.withUnsafeFileSystemRepresentation { path in
-            path.map { deferredStreamFuzz($0, UInt32(seed), 24) } ?? 0
+            copy.withUnsafeFileSystemRepresentation { copyPath in
+                guard let path, let copyPath else { return 0 }
+                return Int(deferredStreamFuzz(path, copyPath, UInt32(seed), 24))
+            }
         }
         #expect(result == -1, "seed \(seed) diverged after operation \(result)")
     }
@@ -52,6 +59,16 @@ struct DeferredWriteStreamTests {
             path.map { deferredStreamCommitBytes($0, 100, 16, 200, 0) } ?? -1
         }
         #expect(written == 16 + (1 << 20) - 100)
+    }
+
+    /// Overwriting and appending leave every original byte where it was; inserting or removing at 100
+    /// moves the 900 or 884 bytes after the edit.
+    @Test(arguments: [(0, 0), (1, 0), (2, 900), (3, 884)])
+    func bytesToMoveCountsWhatAnEditDisplaces(edit: Int, moved: Int) throws {
+        let url = try file(1000)
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        #expect(url.withUnsafeFileSystemRepresentation { path in path.map { deferredStreamBytesToMove($0, Int32(edit)) } ?? -1 } == Int64(moved))
     }
 
     @Test func aReadOnlyStreamRefusesToCommit() throws {
