@@ -126,19 +126,9 @@ typedef struct {
 
 MkvSegmentLayout mkvSegmentLayout(const char *path);
 
-// MARK: - FileStream moves
-
-/// `FileStream::insert` on the file at `path`, through a move buffer of `moveBufferSize` bytes
-/// (0 for the default). Returns false if the file could not be opened for writing.
-bool streamInsert(const char *path, const void *data, unsigned int size,
-                  long long start, unsigned int replace, unsigned int moveBufferSize);
-
-/// `FileStream::removeBlock` on the file at `path`, as `streamInsert`.
-bool streamRemoveBlock(const char *path, long long start, unsigned int length,
-                       unsigned int moveBufferSize);
-
-/// The move buffer size a new `FileStream` uses, and what `setMoveBufferSize(size)` then reports.
-unsigned int streamMoveBufferSize(unsigned int size);
+/// The length in bytes `EBML::renderVINT(size, 0)` writes `size` in; 0 if it wrote nothing.
+/// `roundTrips` reports whether parsing that rendering gives back `size` as a known size.
+int ebmlSizeLength(unsigned long long size, bool *roundTrips);
 
 // MARK: - DeferredWriteStream
 

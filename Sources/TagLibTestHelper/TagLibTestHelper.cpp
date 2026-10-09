@@ -4,6 +4,7 @@
 
 #include "TagLibTestHelper.h"
 
+#include <taglib/ebmlutils.h>
 #include <taglib/matroskaattachedfile.h>
 #include <taglib/matroskaattachments.h>
 #include <taglib/matroskafile.h>
@@ -384,6 +385,17 @@ MkvSegmentLayout mkvSegmentLayout(const char *path)
     return layout;
 }
 
+int ebmlSizeLength(unsigned long long size, bool *roundTrips)
+{
+    const ByteVector rendered = EBML::renderVINT(size, 0);
+    const auto [length, value] = EBML::parseVINT(rendered);
+    if(roundTrips) {
+        *roundTrips = !rendered.isEmpty() && length == rendered.size() && value == size
+            && !EBML::isUnknownSize(length, value);
+    }
+    return static_cast<int>(rendered.size());
+}
+
 // MARK: - DeferredWriteStream
 
 namespace {
@@ -533,35 +545,6 @@ bool deferredStreamRefusesReadOnlyCommit(const char *path)
     deferred.insert(ByteVector("x", 1), 0, 0);
     const ByteVector before = readWholeFile(path);
     return !deferred.commit() && readWholeFile(path) == before;
-}
-
-// MARK: - FileStream moves
-
-bool streamInsert(const char *path, const void *data, unsigned int size,
-                  long long start, unsigned int replace, unsigned int moveBufferSize)
-{
-    FileStream stream(path);
-    if(!stream.isOpen() || stream.readOnly()) return false;
-    stream.setMoveBufferSize(moveBufferSize);
-    stream.insert(ByteVector(static_cast<const char *>(data), size), start, replace);
-    return true;
-}
-
-bool streamRemoveBlock(const char *path, long long start, unsigned int length,
-                       unsigned int moveBufferSize)
-{
-    FileStream stream(path);
-    if(!stream.isOpen() || stream.readOnly()) return false;
-    stream.setMoveBufferSize(moveBufferSize);
-    stream.removeBlock(start, length);
-    return true;
-}
-
-unsigned int streamMoveBufferSize(unsigned int size)
-{
-    FileStream stream("/dev/null", true);
-    stream.setMoveBufferSize(size);
-    return stream.moveBufferSize();
 }
 
 bool copyTestFile(const char *src, const char *dst)
