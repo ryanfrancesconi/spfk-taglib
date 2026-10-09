@@ -73,6 +73,12 @@ namespace TagLib {
         return 4;
       if(data < 0x7FFFFFFFFu)
         return 5;
+      if(data < 0x3FFFFFFFFFFu)
+        return 6;
+      if(data < 0x1FFFFFFFFFFFFu)
+        return 7;
+      if(data < 0xFFFFFFFFFFFFFFu)
+        return 8;
       return 0;
     }
 
