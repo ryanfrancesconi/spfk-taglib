@@ -103,6 +103,8 @@ module taglib {
 	header "taglib/mp4itemfactory.h"
 	header "taglib/mp4stem.h"
 	header "taglib/mp4chapter.h"
+	header "taglib/mp4chapterholder.h"
+	header "taglib/mp4nerochapterlist.h"
 	header "taglib/mp4qtchapterlist.h"
 	header "taglib/modfilebase.h"
 	header "taglib/modfile.h"
