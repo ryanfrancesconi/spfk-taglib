@@ -48,7 +48,8 @@ struct DeferredWriteStreamTests {
             path.map { deferredStreamCommitBytes($0, 100, 16, 4116, 16) } ?? -1
         }
         // 16 inserted bytes, then the 4,000 between the insertion and the removal moved by 16.
-        #expect(written == 16 + 4000)
+        let expected: Int64 = 16 + 4000
+        #expect(written == expected)
     }
 
     @Test func aGrowthMovesTheRestOnce() throws {
@@ -58,7 +59,8 @@ struct DeferredWriteStreamTests {
         let written = url.withUnsafeFileSystemRepresentation { path in
             path.map { deferredStreamCommitBytes($0, 100, 16, 200, 0) } ?? -1
         }
-        #expect(written == 16 + (1 << 20) - 100)
+        let expected: Int64 = 16 + (1 << 20) - 100
+        #expect(written == expected)
     }
 
     /// Overwriting and appending leave every original byte where it was; inserting or removing at 100
