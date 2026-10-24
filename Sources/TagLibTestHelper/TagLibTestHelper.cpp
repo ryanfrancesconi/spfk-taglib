@@ -4,7 +4,9 @@
 
 #include "TagLibTestHelper.h"
 
+#include <taglib/commentsframe.h>
 #include <taglib/ebmlutils.h>
+#include <taglib/id3v2tag.h>
 #include <taglib/infotag.h>
 #include <taglib/matroskaattachedfile.h>
 #include <taglib/matroskaattachments.h>
@@ -426,6 +428,53 @@ int ebmlSizeLength(unsigned long long size, bool *roundTrips)
             && !EBML::isUnknownSize(length, value);
     }
     return static_cast<int>(rendered.size());
+}
+
+// MARK: - ID3v2
+
+ID3v2CommentFrames id3v2SetComment(int count, const char **languages, const char **texts,
+                                   int valueCount, const char **values)
+{
+    ID3v2CommentFrames result;
+    memset(&result, 0, sizeof(result));
+
+    ID3v2::Tag tag;
+    for(int i = 0; i < count; ++i) {
+        auto frame = new ID3v2::CommentsFrame(String::UTF8);
+        frame->setLanguage(ByteVector(languages[i]));
+        frame->setText(String(texts[i], String::UTF8));
+        tag.addFrame(frame);
+    }
+
+    if(values) {
+        StringList list;
+        for(int i = 0; i < valueCount; ++i)
+            list.append(String(values[i], String::UTF8));
+        PropertyMap properties;
+        properties["COMMENT"] = list;
+        tag.setProperties(properties);
+    }
+    else {
+        tag.setProperties(tag.properties());
+    }
+
+    const ID3v2::FrameList comments = tag.frameList("COMM");
+    result.commentCount = static_cast<int>(comments.size());
+    int index = 0;
+    for(const auto *frame : comments) {
+        if(index == 4)
+            break;
+        if(auto comment = dynamic_cast<const ID3v2::CommentsFrame *>(frame)) {
+            const ByteVector language = comment->language();
+            memcpy(result.languages[index], language.data(), std::min<size_t>(language.size(), 3));
+            const ByteVector text = comment->text().data(String::UTF8);
+            memcpy(result.texts[index], text.data(), std::min<size_t>(text.size(), 31));
+        }
+        ++index;
+    }
+    result.userTextCount = static_cast<int>(tag.frameList("TXXX").size());
+
+    return result;
 }
 
 // MARK: - DeferredWriteStream

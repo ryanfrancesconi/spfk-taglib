@@ -25,6 +25,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once; `bytesToMove()` and `writeTo()` let a caller write the result elsewhere instead | `26c64c2`, `3394281` | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap`, `include/taglib/tdeferredwritestream.h` | carried; PR not opened |
 | MP4 QuickTime chapters: a list whose first chapter starts after 0 covers the leading placeholder chapter with an empty edit, so players honoring the edit list (AVFoundation, ffmpeg) do not show it as an untitled first chapter; the placeholder stays for players that ignore edit lists | `c3a326a` | `mp4/mp4qtchapterlist.cpp` | carried; PR not opened |
 | RIFF INFO `properties()`: a field with no property key is reported in `unsupportedData()` by its ID instead of as an empty string, so `removeUnsupportedProperties(unsupportedData())` removes it | `e096319` | `riff/wav/infotag.cpp` | carried; PR not opened |
+| ID3v2 `setProperties`: a key spread over several frames (one undescribed COMM per language, say) keeps those frames when the requested list equals their values combined in frame order, instead of replacing them with one `TXXX`, so `setProperties(properties())` no longer loses them | `<pending>` | `mpeg/id3v2/id3v2tag.cpp` | carried; PR not opened |
 
 ## Structure
 

@@ -148,6 +148,24 @@ MkvSegmentLayout mkvSegmentLayout(const char *path);
 /// `roundTrips` reports whether parsing that rendering gives back `size` as a known size.
 int ebmlSizeLength(unsigned long long size, bool *roundTrips);
 
+// MARK: - ID3v2
+
+/// The frames of an ID3v2 tag after `id3v2SetComment`.
+typedef struct {
+    /// COMM frames, in frame order; `languages` and `texts` describe the first 4 of them.
+    int commentCount;
+    char languages[4][4];
+    /// Each COMM frame's text as UTF-8 (max 32 bytes each).
+    char texts[4][32];
+    int userTextCount;
+} ID3v2CommentFrames;
+
+/// Builds an ID3v2 tag holding an undescribed COMM frame for each of the `count` `languages` and
+/// `texts`, then calls `setProperties` with COMMENT set to the `valueCount` `values`, or with the
+/// tag's own `properties()` when `values` is null, and describes the frames that remain.
+ID3v2CommentFrames id3v2SetComment(int count, const char **languages, const char **texts,
+                                   int valueCount, const char **values);
+
 // MARK: - DeferredWriteStream
 
 /// Applies `operations` seeded random writes, insertions, removals and truncations to a
