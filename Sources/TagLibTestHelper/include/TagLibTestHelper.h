@@ -95,6 +95,24 @@ WavPropertiesResult wavAudioProperties(const char *path);
 /// Parses the RIFF header of the file at `path` directly, without going through TagLib.
 RiffHeaderInfo riffHeaderInfo(const char *path);
 
+// MARK: - RIFF INFO
+
+/// What `RIFF::Info::Tag::properties()` reports for a tag holding INAM = `title` and `fieldID`, an ID
+/// with no property key, and what `removeUnsupportedProperties(unsupportedData())` then leaves.
+typedef struct {
+    int unsupportedCount;
+    /// The first entry of `unsupportedData()` as UTF-8; empty if there is none.
+    char firstUnsupported[16];
+    /// Whether the map's TITLE is `title`.
+    bool titleMapped;
+    /// Whether `fieldID` is still in the tag after the removal.
+    bool fieldRemains;
+    /// Whether INAM still holds `title` after the removal.
+    bool titleKept;
+} InfoUnsupportedResult;
+
+InfoUnsupportedResult infoUnsupportedProperties(const char *title, const char *fieldID);
+
 // MARK: - Matroska
 
 /// Sets the property `key` to `value` through the property map, keeping every other property, and

@@ -5,6 +5,7 @@
 #include "TagLibTestHelper.h"
 
 #include <taglib/ebmlutils.h>
+#include <taglib/infotag.h>
 #include <taglib/matroskaattachedfile.h>
 #include <taglib/matroskaattachments.h>
 #include <taglib/matroskafile.h>
@@ -260,6 +261,37 @@ RiffHeaderInfo riffHeaderInfo(const char *path)
     }
 
     return info;
+}
+
+// MARK: - RIFF INFO
+
+InfoUnsupportedResult infoUnsupportedProperties(const char *title, const char *fieldID)
+{
+    InfoUnsupportedResult result;
+    memset(&result, 0, sizeof(result));
+
+    const String titleText(title, String::UTF8);
+    const ByteVector id(fieldID);
+
+    RIFF::Info::Tag tag;
+    tag.setFieldText("INAM", titleText);
+    tag.setFieldText(id, "value");
+
+    const PropertyMap map = tag.properties();
+    const StringList unsupported = map.unsupportedData();
+    result.unsupportedCount = static_cast<int>(unsupported.size());
+    if(!unsupported.isEmpty()) {
+        const ByteVector first = unsupported.front().data(String::UTF8);
+        const size_t length = std::min<size_t>(first.size(), sizeof(result.firstUnsupported) - 1);
+        memcpy(result.firstUnsupported, first.data(), length);
+    }
+    result.titleMapped = map.value("TITLE") == StringList(titleText);
+
+    tag.removeUnsupportedProperties(unsupported);
+    result.fieldRemains = tag.fieldListMap().contains(id);
+    result.titleKept = tag.fieldText("INAM") == titleText;
+
+    return result;
 }
 
 // MARK: - File utilities
