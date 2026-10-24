@@ -299,6 +299,7 @@ namespace
     std::tuple("WM/ToolName", "TOOLNAME", ASF::Attribute::UnicodeType),
     std::tuple("WM/ToolVersion", "TOOLVERSION", ASF::Attribute::UnicodeType),
     std::tuple("WM/Provider", "PROVIDER", ASF::Attribute::UnicodeType),
+    std::tuple("WM/SharedUserRating", "RATING", ASF::Attribute::DWordType),
     std::tuple("WM/UniqueFileIdentifier", "UNIQUEFILEIDENTIFIER", ASF::Attribute::UnicodeType),
     std::tuple("WMFSDKVersion", "WMFSDKVERSION", ASF::Attribute::UnicodeType),
     std::tuple("WMFSDKNeeded", "WMFSDKNEEDED", ASF::Attribute::UnicodeType),
@@ -381,8 +382,13 @@ PropertyMap ASF::Tag::properties() const
     props["COMMENT"] = d->comment;
   }
 
+  AttributeList sharedRatings, popularimeters;
   for(const auto &[k, attributes] : std::as_const(d->attributeListMap)) {
     if(const String key = translateKey(k); !key.isEmpty()) {
+      if(key == "RATING") {
+        sharedRatings = attributes;
+        continue;
+      }
       for(const auto &attr : attributes) {
         // The same attribute can occur in both the extended content
         // description object and the metadata (library) object, skip exact
@@ -393,8 +399,36 @@ PropertyMap ASF::Tag::properties() const
         }
       }
     }
+    else if(k.upper() == "POPULARIMETER") {
+      popularimeters = attributes;
+    }
     else {
       props.addUnsupportedData(k);
+    }
+  }
+
+  // Expose the rating through the standard RATING property.  WM/SharedUserRating
+  // (the Windows Media rating, a DWORD on the 0-99 scale) takes precedence over
+  // the POPM-style POPULARIMETER attribute (email|rating|counter, 0-255).
+  if(!sharedRatings.isEmpty()) {
+    for(const auto &attr : sharedRatings) {
+      if(const String value = attributeToString(attr);
+         !props.value("RATING").contains(value)) {
+        props.insert("RATING", value);
+      }
+    }
+  }
+  else if(!popularimeters.isEmpty()) {
+    // A POPULARIMETER attribute stores a POPM-style value of the form
+    // "email|rating|counter".  Extract the numeric rating field.
+    for(const auto &attr : popularimeters) {
+      if(const StringList parts = attr.toString().split("|");
+         parts.size() == 3) {
+        if(const String &value = parts[1];
+           !value.isEmpty() && !props.value("RATING").contains(value)) {
+          props.insert("RATING", value);
+        }
+      }
     }
   }
   return props;
@@ -431,6 +465,11 @@ PropertyMap ASF::Tag::setProperties(const PropertyMap &props)
       else if(prop == "COPYRIGHT") {
         d->copyright.clear();
       }
+      else if(prop == "RATING") {
+        // Remove both rating sources to keep the round-trip lossless.
+        eraseAttribute(d->attributeListMap, "WM/SharedUserRating");
+        eraseAttribute(d->attributeListMap, "POPULARIMETER");
+      }
       else {
         eraseAttribute(d->attributeListMap, reverseKeyMap[prop].first);
       }
@@ -438,9 +477,34 @@ PropertyMap ASF::Tag::setProperties(const PropertyMap &props)
   }
 
   PropertyMap ignoredProps;
+  const auto setSingleValue = [&ignoredProps](const String &prop,
+                                              const StringList &values, String &target) {
+    target = values.isEmpty() ? String() : values.front();
+    if(values.size() > 1) {
+      StringList ignoredValues = values;
+      ignoredValues.erase(ignoredValues.begin());
+      ignoredProps.insert(prop, ignoredValues);
+    }
+  };
+
   for(const auto &[prop, attributes] : props) {
     if(reverseKeyMap.contains(prop)) {
       const auto &[name, type] = reverseKeyMap[prop];
+      if(name == "WM/SharedUserRating" &&
+         !d->attributeListMap.contains("WM/SharedUserRating")) {
+        if(auto it = d->attributeListMap.find("POPULARIMETER");
+           it != d->attributeListMap.end() && !it->second.isEmpty()) {
+          // Rebuild a POPULARIMETER value, replacing the rating field while keeping
+          // the email and counter.
+          const StringList parts = it->second.front().toString().split("|");
+          eraseAttribute(d->attributeListMap, "POPULARIMETER");
+          for(const auto &str : attributes) {
+            addAttribute("POPULARIMETER",
+              parts.size() == 3 ? parts[0] + "|" + str + "|" + parts[2] : str);
+          }
+          continue;
+        }
+      }
       eraseAttribute(d->attributeListMap, name);
       for(const auto &str : attributes) {
         switch(type) {
@@ -488,16 +552,16 @@ PropertyMap ASF::Tag::setProperties(const PropertyMap &props)
       }
     }
     else if(prop == "TITLE") {
-      d->title = attributes.toString();
+      setSingleValue(prop, attributes, d->title);
     }
     else if(prop == "ARTIST") {
-      d->artist = attributes.toString();
+      setSingleValue(prop, attributes, d->artist);
     }
     else if(prop == "COMMENT") {
-      d->comment = attributes.toString();
+      setSingleValue(prop, attributes, d->comment);
     }
     else if(prop == "COPYRIGHT") {
-      d->copyright = attributes.toString();
+      setSingleValue(prop, attributes, d->copyright);
     }
     else {
       ignoredProps.insert(prop, attributes);
