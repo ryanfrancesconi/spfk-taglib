@@ -547,7 +547,9 @@ namespace
   //! \a textDataOffset is where the text samples will start in the file.
   //! \a sampleSizes contains per-sample sizes for the stsz table.
   //! \a movieDuration is the movie-level duration in mvhd timescale units (for edts/elst).
-  //! \a leadMs is how long the leading placeholder chapter lasts, 0 when there is none.
+  //! \a movieTimescale is the mvhd timescale.
+  //! \a leadMs is the start time of the first real chapter when a placeholder
+  //! chapter has been prepended at time 0, otherwise 0.
   ByteVector buildChapterTrak(unsigned int trackId, unsigned int timescale,
                               long long durationMs,
                               const MP4::ChapterList &chapters,
@@ -687,26 +689,31 @@ namespace
     ByteVector mdia = renderAtom("mdia", mdiaContent);
 
     // -- edts / elst (edit list) --
-    // AVFoundation requires an edit list for the chapter track. It plays the whole
-    // media from time 0, at normal rate -- except that a leading placeholder chapter
-    // is covered by an empty edit instead, so a player honoring the edit list does
-    // not present it as an untitled first chapter. The placeholder stays in the media
-    // for players that ignore edit lists.
-    const auto leadMovie = static_cast<unsigned int>(
+    // AVFoundation requires an edit list for the chapter track.  The media is
+    // played from time 0 at normal rate, except that a leading placeholder
+    // chapter is covered by an empty edit, so that players honoring the edit
+    // list do not present it as an untitled first chapter.  The placeholder
+    // sample stays in the media for players which ignore edit lists.
+    const auto leadDuration = static_cast<unsigned int>(
       static_cast<double>(leadMs) * static_cast<double>(movieTimescale) / 1000.0 + 0.5);
-    const bool skipsLead = leadMs > 0 && leadMovie > 0 && leadMovie < movieDuration;
+    const bool hasEmptyEdit = leadDuration > 0 && leadDuration < movieDuration;
+    const auto leadMediaTime = static_cast<unsigned int>(
+      static_cast<double>(leadMs) * static_cast<double>(timescale) / 1000.0 + 0.5);
 
     ByteVector elstData;
-    elstData.append(ByteVector::fromUInt(skipsLead ? 2 : 1)); // entry count
-    if(skipsLead) {
-      elstData.append(ByteVector::fromUInt(leadMovie));      // segment duration (mvhd timescale)
-      elstData.append(ByteVector::fromUInt(0xFFFFFFFF));     // media time = -1: empty edit
-      elstData.append(ByteVector::fromUInt(0x00010000));     // media rate = 1.0 (fixed point)
+    elstData.append(ByteVector::fromUInt(hasEmptyEdit ? 2 : 1)); // entry count
+    if(hasEmptyEdit) {
+      elstData.append(ByteVector::fromUInt(leadDuration));  // segment duration (mvhd timescale)
+      elstData.append(ByteVector::fromUInt(0xFFFFFFFF));    // media time = -1 (empty edit)
+      elstData.append(ByteVector::fromUInt(0x00010000));    // media rate = 1.0 (fixed point)
+      elstData.append(ByteVector::fromUInt(movieDuration - leadDuration));
+      elstData.append(ByteVector::fromUInt(leadMediaTime)); // media time of first chapter
     }
-    elstData.append(ByteVector::fromUInt(movieDuration - (skipsLead ? leadMovie : 0)));
-    elstData.append(ByteVector::fromUInt(skipsLead ? static_cast<unsigned int>(
-      static_cast<double>(leadMs) * static_cast<double>(timescale) / 1000.0 + 0.5) : 0)); // media time
-    elstData.append(ByteVector::fromUInt(0x00010000));       // media rate = 1.0 (fixed point)
+    else {
+      elstData.append(ByteVector::fromUInt(movieDuration)); // segment duration (mvhd timescale)
+      elstData.append(ByteVector::fromUInt(0));             // media time = 0
+    }
+    elstData.append(ByteVector::fromUInt(0x00010000));      // media rate = 1.0 (fixed point)
     ByteVector elst = renderFullBox("elst", 0, 0, elstData);
     ByteVector edts = renderAtom("edts", elst);
 

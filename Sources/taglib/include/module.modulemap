@@ -23,6 +23,7 @@ module taglib {
 	textual header "taglib/tmap.tcc"
 	header "taglib/tpicturetype.h"
 	header "taglib/tpropertymap.h"
+	header "taglib/tcharset.h"
 	header "taglib/tdebuglistener.h"
 	header "taglib/tversionnumber.h"
 	header "taglib/mpegfile.h"

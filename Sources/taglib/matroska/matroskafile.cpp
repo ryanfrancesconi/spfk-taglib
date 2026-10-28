@@ -736,7 +736,7 @@ bool Matroska::File::save(WriteStyle writeStyle)
   }
 
   // For elements that were moved to the end by AvoidInsert, and new elements
-  // laid out again after them, update their seek head entry to reflect the
+  // laid out again with them, update their seek head entry to reflect the
   // new file position.
   if(writeStyle == WriteStyle::AvoidInsert && d->seekHead) {
     const offset_t segDataOffset = d->segment->dataOffset();
