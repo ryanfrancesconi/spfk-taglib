@@ -20,7 +20,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
-| `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once; `bytesToMove()` and `writeTo()` let a caller write the result elsewhere instead | `26c64c2`, `3394281` | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap`, `include/taglib/tdeferredwritestream.h` | issue #1474 open; PR not opened |
+| `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once; `bytesToMove()` and `writeTo()` let a caller write the result elsewhere instead | `26c64c2`, `3394281` | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap`, `include/taglib/tdeferredwritestream.h` | PR #1476 open (issue #1474) |
 
 ## Structure
 
