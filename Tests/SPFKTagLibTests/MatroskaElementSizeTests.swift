@@ -34,6 +34,7 @@ struct MatroskaElementSizeTests {
         }
 
         #expect(readLength == Int64(length))
-        #expect(String(cString: buffer) == value)
+        let bytes = buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
+        #expect(String(decoding: bytes, as: UTF8.self) == value)
     }
 }
