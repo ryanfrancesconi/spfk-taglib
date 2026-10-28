@@ -16,7 +16,10 @@
 #include <taglib/tbytevectorstream.h>
 #include <taglib/tdeferredwritestream.h>
 #include <taglib/tfilestream.h>
+#include <taglib/textidentificationframe.h>
 #include <taglib/tpropertymap.h>
+#include <taglib/unsynchronizedlyricsframe.h>
+#include <taglib/urllinkframe.h>
 #include <taglib/wavfile.h>
 
 #include <algorithm>
@@ -473,6 +476,134 @@ ID3v2CommentFrames id3v2SetComment(int count, const char **languages, const char
         ++index;
     }
     result.userTextCount = static_cast<int>(tag.frameList("TXXX").size());
+
+    return result;
+}
+
+namespace {
+
+ID3v2::Frame *makeFrame(const ID3v2FrameSpec &spec)
+{
+    const ByteVector frameID(spec.frameID);
+    const auto encoding = static_cast<String::Type>(spec.encoding);
+    const String text(spec.text ? spec.text : "", String::UTF8);
+    const String description(spec.description ? spec.description : "", String::UTF8);
+    const ByteVector language(spec.language ? spec.language : "XXX");
+
+    if(frameID == "TXXX") {
+        return new ID3v2::UserTextIdentificationFrame(description, text.split("/"), encoding);
+    }
+    if(frameID == "COMM") {
+        auto frame = new ID3v2::CommentsFrame(encoding);
+        frame->setLanguage(language);
+        frame->setDescription(description);
+        frame->setText(text);
+        return frame;
+    }
+    if(frameID == "USLT") {
+        auto frame = new ID3v2::UnsynchronizedLyricsFrame(encoding);
+        frame->setLanguage(language);
+        frame->setDescription(description);
+        frame->setText(text);
+        return frame;
+    }
+    if(frameID == "WXXX") {
+        auto frame = new ID3v2::UserUrlLinkFrame(encoding);
+        frame->setDescription(description);
+        frame->setUrl(text);
+        return frame;
+    }
+    if(frameID[0] == 'W') {
+        auto frame = new ID3v2::UrlLinkFrame(frameID);
+        frame->setUrl(text);
+        return frame;
+    }
+    auto frame = new ID3v2::TextIdentificationFrame(frameID, encoding);
+    frame->setText(text.split("/"));
+    return frame;
+}
+
+void copyString(char *destination, size_t capacity, const String &string)
+{
+    const ByteVector bytes = string.data(String::UTF8);
+    memcpy(destination, bytes.data(), std::min<size_t>(bytes.size(), capacity - 1));
+}
+
+ID3v2FrameState describeFrame(const ID3v2::Frame *frame)
+{
+    ID3v2FrameState state;
+    memset(&state, 0, sizeof(state));
+    memcpy(state.frameID, frame->frameID().data(), std::min<size_t>(frame->frameID().size(), 4));
+    state.encoding = -1;
+
+    if(auto userText = dynamic_cast<const ID3v2::UserTextIdentificationFrame *>(frame)) {
+        StringList fields = userText->fieldList();
+        if(!fields.isEmpty())
+            fields.erase(fields.begin());
+        copyString(state.description, sizeof(state.description), userText->description());
+        copyString(state.text, sizeof(state.text), fields.toString("/"));
+        state.encoding = userText->textEncoding();
+    }
+    else if(auto text = dynamic_cast<const ID3v2::TextIdentificationFrame *>(frame)) {
+        copyString(state.text, sizeof(state.text), text->fieldList().toString("/"));
+        state.encoding = text->textEncoding();
+    }
+    else if(auto comment = dynamic_cast<const ID3v2::CommentsFrame *>(frame)) {
+        memcpy(state.language, comment->language().data(), std::min<size_t>(comment->language().size(), 3));
+        copyString(state.description, sizeof(state.description), comment->description());
+        copyString(state.text, sizeof(state.text), comment->text());
+        state.encoding = comment->textEncoding();
+    }
+    else if(auto lyrics = dynamic_cast<const ID3v2::UnsynchronizedLyricsFrame *>(frame)) {
+        memcpy(state.language, lyrics->language().data(), std::min<size_t>(lyrics->language().size(), 3));
+        copyString(state.description, sizeof(state.description), lyrics->description());
+        copyString(state.text, sizeof(state.text), lyrics->text());
+        state.encoding = lyrics->textEncoding();
+    }
+    else if(auto userURL = dynamic_cast<const ID3v2::UserUrlLinkFrame *>(frame)) {
+        copyString(state.description, sizeof(state.description), userURL->description());
+        copyString(state.text, sizeof(state.text), userURL->url());
+        state.encoding = userURL->textEncoding();
+    }
+    else if(auto url = dynamic_cast<const ID3v2::UrlLinkFrame *>(frame)) {
+        copyString(state.text, sizeof(state.text), url->url());
+    }
+    return state;
+}
+
+} // namespace
+
+ID3v2FrameList id3v2SetProperty(int count, const ID3v2FrameSpec *frames, const char *key,
+                                int valueCount, const char **values)
+{
+    ID3v2FrameList result;
+    memset(&result, 0, sizeof(result));
+
+    ID3v2::Tag tag;
+    for(int i = 0; i < count; ++i)
+        tag.addFrame(makeFrame(frames[i]));
+
+    PropertyMap properties = tag.properties();
+    const String propertyKey(key, String::UTF8);
+    if(values) {
+        StringList list;
+        for(int i = 0; i < valueCount; ++i)
+            list.append(String(values[i], String::UTF8));
+        properties.replace(propertyKey, list);
+    }
+    else {
+        properties.erase(propertyKey);
+    }
+    tag.setProperties(properties);
+
+    const ID3v2::FrameList &remaining = tag.frameList();
+    result.frameCount = static_cast<int>(remaining.size());
+    int index = 0;
+    for(const auto *frame : remaining) {
+        if(index == 8)
+            break;
+        result.frames[index++] = describeFrame(frame);
+    }
 
     return result;
 }

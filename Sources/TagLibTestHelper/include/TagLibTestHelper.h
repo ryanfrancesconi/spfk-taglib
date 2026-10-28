@@ -166,6 +166,42 @@ typedef struct {
 ID3v2CommentFrames id3v2SetComment(int count, const char **languages, const char **texts,
                                    int valueCount, const char **values);
 
+/// A frame for `id3v2SetProperty` to build: a text (`T***`, `TXXX`), `COMM`, `USLT`, or URL
+/// (`W***`, `WXXX`) frame. Strings are UTF-8; `language` and `description` are ignored by frames
+/// without them.
+typedef struct {
+    const char *frameID;
+    const char *language;
+    const char *description;
+    /// The text, URL, or `/`-separated fields of a text frame.
+    const char *text;
+    /// A `TagLib::String::Type` raw value: 0 Latin-1, 3 UTF-8.
+    int encoding;
+} ID3v2FrameSpec;
+
+/// One frame of an `ID3v2FrameList`; strings are UTF-8, truncated to 31 bytes.
+typedef struct {
+    char frameID[5];
+    char language[4];
+    char description[32];
+    /// The text or URL; a text frame's fields joined by `/`, without a TXXX description.
+    char text[32];
+    /// The stored `TagLib::String::Type`, or -1 for a frame without one.
+    int encoding;
+} ID3v2FrameState;
+
+/// The frames of an ID3v2 tag in `frameList()` order; `frames` describes the first 8.
+typedef struct {
+    int frameCount;
+    ID3v2FrameState frames[8];
+} ID3v2FrameList;
+
+/// Builds an ID3v2 tag from the `count` `frames`, then calls `setProperties` with the tag's own
+/// `properties()` in which `key` is set to the `valueCount` `values`, or removed when `values` is
+/// null, and describes the frames that remain.
+ID3v2FrameList id3v2SetProperty(int count, const ID3v2FrameSpec *frames, const char *key,
+                                int valueCount, const char **values);
+
 // MARK: - DeferredWriteStream
 
 /// Applies `operations` seeded random writes, insertions, removals and truncations to a
