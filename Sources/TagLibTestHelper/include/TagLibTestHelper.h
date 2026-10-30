@@ -113,6 +113,13 @@ typedef struct {
 
 InfoUnsupportedResult infoUnsupportedProperties(const char *title, const char *fieldID);
 
+/// Parses an INFO list holding one IARL field of `size` bytes from `fieldBytes`, with
+/// `declaredCodePage` as the file's CSET code page (0 for none) and `assumedCodePage` set through
+/// `setAssumedCodePage()` for the parse only, and copies the field's text as UTF-8 into `out`.
+/// Returns the length of that text.
+int infoDecodedField(const char *fieldBytes, unsigned int size, unsigned int declaredCodePage,
+                     unsigned int assumedCodePage, char *out, int outSize);
+
 // MARK: - Matroska
 
 /// Sets the property `key` to `value` through the property map, keeping every other property, and

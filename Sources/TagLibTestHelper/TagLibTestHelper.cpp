@@ -299,6 +299,27 @@ InfoUnsupportedResult infoUnsupportedProperties(const char *title, const char *f
     return result;
 }
 
+int infoDecodedField(const char *fieldBytes, unsigned int size, unsigned int declaredCodePage,
+                     unsigned int assumedCodePage, char *out, int outSize)
+{
+    ByteVector list("INFO");
+    list.append("IARL");
+    list.append(ByteVector::fromUInt(size, false));
+    list.append(ByteVector(fieldBytes, size));
+    if(size & 1) list.append('\0');
+
+    const unsigned int previous = RIFF::Info::Tag::assumedCodePage();
+    RIFF::Info::Tag::setAssumedCodePage(assumedCodePage);
+    const RIFF::Info::Tag tag(list, declaredCodePage);
+    RIFF::Info::Tag::setAssumedCodePage(previous);
+
+    const ByteVector text = tag.fieldText("IARL").data(String::UTF8);
+    const int length = std::min<int>(static_cast<int>(text.size()), outSize - 1);
+    memcpy(out, text.data(), length);
+    out[length] = '\0';
+    return static_cast<int>(text.size());
+}
+
 // MARK: - File utilities
 
 // MARK: - Matroska
