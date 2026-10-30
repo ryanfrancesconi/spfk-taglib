@@ -21,6 +21,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
 | `DeferredWriteStream` — an `IOStream` over another stream that records every write, insertion, removal and truncation in memory and writes the result in one `commit()`, moving displaced bytes at most once; `bytesToMove()` and `writeTo()` let a caller write the result elsewhere instead | `26c64c2`, `3394281` | `toolkit/tdeferredwritestream.h`, `toolkit/tdeferredwritestream.cpp`, `include/module.modulemap`, `include/taglib/tdeferredwritestream.h` | PR #1476 open (issue #1474) |
+| RIFF INFO: under an assumed UTF-8 (`setAssumedCodePage(65001)`, no `CSET`), a field that isn't valid UTF-8 is read as ISO 8859-1 instead of as empty; a declared code page is never second-guessed | `c901643` | `riff/wav/infotag.cpp`, `riff/wav/infotag.h` | carried; PR not opened |
 | ID3v2 `setProperties` updates the one frame holding an edited key in place when its type can hold the new value, keeping a `COMM`/`USLT` language, a `TXXX` description's spelling, the frame's position and its stored encoding | `f4644d0` | `mpeg/id3v2/id3v2tag.cpp` | issue #1475 open; PR not opened |
 
 ## Structure
