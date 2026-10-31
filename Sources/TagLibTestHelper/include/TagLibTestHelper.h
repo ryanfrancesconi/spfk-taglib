@@ -267,6 +267,17 @@ int countMdatAtoms(const char *path);
 /// Returns -1 on error or if no mdat is found.
 long long firstMdatSize(const char *path);
 
+// MARK: - Base64
+
+/// `ByteVector::fromBase64` of `input` into `out`. Returns the decoded size, or -1 if it does not
+/// fit in `outSize`.
+int base64Decode(const char *input, unsigned char *out, int outSize);
+
+/// Parses a Vorbis comment holding one `METADATA_BLOCK_PICTURE`, its base64 wrapped every 76
+/// characters when `wrapped`, and returns its picture count; `afterRender` is the count once that
+/// comment is rendered and parsed again.
+int xiphWrappedPictureCount(bool wrapped, int *afterRender);
+
 #ifdef __cplusplus
 }
 #endif

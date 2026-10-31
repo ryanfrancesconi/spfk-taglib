@@ -6,6 +6,7 @@
 
 #include <taglib/commentsframe.h>
 #include <taglib/ebmlutils.h>
+#include <taglib/flacpicture.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/infotag.h>
 #include <taglib/matroskaattachedfile.h>
@@ -22,6 +23,7 @@
 #include <taglib/unsynchronizedlyricsframe.h>
 #include <taglib/urllinkframe.h>
 #include <taglib/wavfile.h>
+#include <taglib/xiphcomment.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -1014,6 +1016,42 @@ long long firstMdatSize(const char *path)
     }
 
     return -1;
+}
+
+int base64Decode(const char *input, unsigned char *out, int outSize)
+{
+    const ByteVector decoded = ByteVector::fromBase64(ByteVector(input));
+    if(static_cast<int>(decoded.size()) > outSize)
+        return -1;
+
+    std::copy(decoded.begin(), decoded.end(), out);
+    return static_cast<int>(decoded.size());
+}
+
+int xiphWrappedPictureCount(bool wrapped, int *afterRender)
+{
+    FLAC::Picture picture;
+    picture.setType(FLAC::Picture::FrontCover);
+    picture.setMimeType("image/jpeg");
+    picture.setData(ByteVector(200, 'x'));
+
+    ByteVector base64 = picture.render().toBase64();
+    if(wrapped) {
+        ByteVector lines;
+        for(unsigned int i = 0; i < base64.size(); i += 76) {
+            lines.append(base64.mid(i, 76));
+            lines.append('\n');
+        }
+        base64 = lines;
+    }
+
+    Ogg::XiphComment comment;
+    comment.addField("METADATA_BLOCK_PICTURE", String(base64, String::Latin1));
+
+    Ogg::XiphComment parsed(comment.render(false));
+    Ogg::XiphComment reparsed(parsed.render(false));
+    *afterRender = static_cast<int>(reparsed.pictureList().size());
+    return static_cast<int>(parsed.pictureList().size());
 }
 
 }  // extern "C"
