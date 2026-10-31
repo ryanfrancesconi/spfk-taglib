@@ -24,6 +24,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | RIFF INFO: under an assumed UTF-8 (`setAssumedCodePage(65001)`, no `CSET`), a field that isn't valid UTF-8 is read as ISO 8859-1 instead of as empty; a declared code page is never second-guessed | `c901643` | `riff/wav/infotag.cpp`, `riff/wav/infotag.h` | carried; PR not opened |
 | ID3v2 `setProperties` updates the one frame holding an edited key in place when its type can hold the new value, keeping a `COMM`/`USLT` language, a `TXXX` description's spelling, the frame's position and its stored encoding | `f4644d0` | `mpeg/id3v2/id3v2tag.cpp` | issue #1475 open; PR not opened |
 | ID3v2 `CTOC` renders at most 255 child elements, with a matching one-byte entry count, instead of a count wrapped mod 256 followed by every child ID | `d0b6af5` | `mpeg/id3v2/frames/tableofcontentsframe.cpp` | carried; PR not opened |
+| WAV `DISP` chunks — `DISPData()`, `setDISPData()` and `hasDISPData()` on `RIFF::WAV::File` give raw access to every DISP chunk in file order, rewritten on save only when set; `RIFF::File` gains a protected `appendChunk()` | `22cffbd` | `riff/rifffile.h`, `riff/rifffile.cpp`, `riff/wav/wavfile.h`, `riff/wav/wavfile.cpp` | PR #1478 open (issue #1468) |
 
 ## Structure
 
