@@ -226,6 +226,9 @@ ID3v2FrameList id3v2SetProperty(int count, const ID3v2FrameSpec *frames, const c
 /// back. `parsedChildren` is the parsed entry count; `titleParsed` whether the `TIT2` survived.
 void id3v2TableOfContentsRoundTrip(int childCount, int *parsedChildren, bool *titleParsed);
 
+/// The frames of the ID3v2 tag in the WAV file at `path`.
+ID3v2FrameList wavID3v2Frames(const char *path);
+
 // MARK: - DeferredWriteStream
 
 /// Applies `operations` seeded random writes, insertions, removals and truncations to a

@@ -707,6 +707,26 @@ void id3v2TableOfContentsRoundTrip(int childCount, int *parsedChildren, bool *ti
   }
 }
 
+ID3v2FrameList wavID3v2Frames(const char *path)
+{
+    ID3v2FrameList result;
+    result.frameCount = 0;
+
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid() || !file.ID3v2Tag())
+        return result;
+
+    const ID3v2::FrameList &frames = file.ID3v2Tag()->frameList();
+    result.frameCount = static_cast<int>(frames.size());
+    int index = 0;
+    for(const auto &frame : frames) {
+        if(index >= 8)
+            break;
+        result.frames[index++] = describeFrame(frame);
+    }
+    return result;
+}
+
 // MARK: - DeferredWriteStream
 
 namespace {
