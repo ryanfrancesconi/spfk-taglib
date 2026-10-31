@@ -301,6 +301,22 @@ typedef struct {
 
 MpegFrameLayout mpegFrameLayout(const char *path);
 
+// MARK: - FileRef
+
+/// What `FileRef` makes of the file at `path`.
+typedef struct {
+    /// The parser chosen: "MPEG", "MP4", "FLAC", "AIFF", "WAV", "Matroska" or "Other";
+    /// empty when the FileRef is null.
+    char format[16];
+    int propertyCount;
+    char title[64];
+} FileRefSummary;
+
+FileRefSummary fileRefSummary(const char *path);
+
+/// Sets the title through `FileRef` and saves. Returns false if the FileRef is null or the save fails.
+bool fileRefSetTitle(const char *path, const char *title);
+
 #ifdef __cplusplus
 }
 #endif

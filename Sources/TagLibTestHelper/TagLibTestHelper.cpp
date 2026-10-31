@@ -4,8 +4,11 @@
 
 #include "TagLibTestHelper.h"
 
+#include <taglib/aifffile.h>
 #include <taglib/commentsframe.h>
 #include <taglib/ebmlutils.h>
+#include <taglib/fileref.h>
+#include <taglib/flacfile.h>
 #include <taglib/flacpicture.h>
 #include <taglib/id3v2tag.h>
 #include <taglib/infotag.h>
@@ -1087,6 +1090,45 @@ MpegFrameLayout mpegFrameLayout(const char *path)
     result.lastFrameOffset = file.lastFrameOffset();
     result.lengthInMilliseconds = file.audioProperties()->lengthInMilliseconds();
     return result;
+}
+
+FileRefSummary fileRefSummary(const char *path)
+{
+    FileRefSummary result {};
+
+    FileRef ref(path);
+    if(ref.isNull())
+        return result;
+
+    File *file = ref.file();
+    const char *format = "Other";
+    if(dynamic_cast<MPEG::File *>(file))
+        format = "MPEG";
+    else if(dynamic_cast<MP4::File *>(file))
+        format = "MP4";
+    else if(dynamic_cast<FLAC::File *>(file))
+        format = "FLAC";
+    else if(dynamic_cast<RIFF::AIFF::File *>(file))
+        format = "AIFF";
+    else if(dynamic_cast<RIFF::WAV::File *>(file))
+        format = "WAV";
+    else if(dynamic_cast<Matroska::File *>(file))
+        format = "Matroska";
+
+    std::strncpy(result.format, format, sizeof(result.format) - 1);
+    result.propertyCount = static_cast<int>(ref.properties().size());
+    std::strncpy(result.title, ref.tag()->title().toCString(true), sizeof(result.title) - 1);
+    return result;
+}
+
+bool fileRefSetTitle(const char *path, const char *title)
+{
+    FileRef ref(path);
+    if(ref.isNull())
+        return false;
+
+    ref.tag()->setTitle(String(title, String::UTF8));
+    return ref.save();
 }
 
 }  // extern "C"
