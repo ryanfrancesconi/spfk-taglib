@@ -209,6 +209,10 @@ typedef struct {
 ID3v2FrameList id3v2SetProperty(int count, const ID3v2FrameSpec *frames, const char *key,
                                 int valueCount, const char **values);
 
+/// A `CTOC` frame with `childCount` child element IDs and an embedded `TIT2`, rendered and parsed
+/// back. `parsedChildren` is the parsed entry count; `titleParsed` whether the `TIT2` survived.
+void id3v2TableOfContentsRoundTrip(int childCount, int *parsedChildren, bool *titleParsed);
+
 // MARK: - DeferredWriteStream
 
 /// Applies `operations` seeded random writes, insertions, removals and truncations to a

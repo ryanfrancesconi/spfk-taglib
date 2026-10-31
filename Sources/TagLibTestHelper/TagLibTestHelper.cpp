@@ -13,6 +13,7 @@
 #include <taglib/matroskafile.h>
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
+#include <taglib/tableofcontentsframe.h>
 #include <taglib/tbytevectorstream.h>
 #include <taglib/tdeferredwritestream.h>
 #include <taglib/tfilestream.h>
@@ -627,6 +628,28 @@ ID3v2FrameList id3v2SetProperty(int count, const ID3v2FrameSpec *frames, const c
     }
 
     return result;
+}
+
+void id3v2TableOfContentsRoundTrip(int childCount, int *parsedChildren, bool *titleParsed)
+{
+  ByteVectorList children;
+  for(int i = 0; i < childCount; ++i)
+    children.append(("chp" + String::number(i)).data(String::Latin1));
+
+  auto *title = new ID3v2::TextIdentificationFrame("TIT2", String::Latin1);
+  title->setText("Contents");
+  ID3v2::FrameList embedded;
+  embedded.append(title);
+  const ID3v2::TableOfContentsFrame frame(ByteVector("toc"), children, embedded);
+
+  const ID3v2::Header header;
+  const ID3v2::TableOfContentsFrame parsed(&header, frame.render());
+  if(parsedChildren)
+    *parsedChildren = static_cast<int>(parsed.entryCount());
+  if(titleParsed) {
+    const auto titles = parsed.embeddedFrameList("TIT2");
+    *titleParsed = !titles.isEmpty() && titles.front()->toString() == "Contents";
+  }
 }
 
 // MARK: - DeferredWriteStream
