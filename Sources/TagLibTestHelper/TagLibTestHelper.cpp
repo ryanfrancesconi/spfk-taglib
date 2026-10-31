@@ -190,6 +190,61 @@ bool wavReadProperty(const char *path, const char *key, char *out, int outSize)
     return true;
 }
 
+bool wavSetDISPTexts(const char *path, const char *const *texts, int count)
+{
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return false;
+
+    ByteVectorList chunks;
+    for(int i = 0; i < count; ++i) {
+        ByteVector chunk = ByteVector::fromUInt(1, false);
+        chunk.append(ByteVector(texts[i], static_cast<unsigned int>(strlen(texts[i]))));
+        chunk.append('\0');
+        chunks.append(chunk);
+    }
+
+    file.setDISPData(chunks);
+    return file.save();
+}
+
+int wavDISPCount(const char *path)
+{
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return -1;
+
+    return static_cast<int>(file.DISPData().size());
+}
+
+int wavDISPText(const char *path, int index, char *out, int outSize)
+{
+    if(outSize > 0)
+        out[0] = '\0';
+
+    RIFF::WAV::File file(path);
+    if(!file.isOpen() || !file.isValid())
+        return -1;
+
+    const ByteVectorList chunks = file.DISPData();
+    if(index < 0 || static_cast<unsigned int>(index) >= chunks.size())
+        return -1;
+
+    const ByteVector &chunk = chunks[index];
+    if(chunk.size() < 4)
+        return -1;
+
+    ByteVector text = chunk.mid(4);
+    const int nul = text.find(ByteVector(1, '\0'));
+    if(nul >= 0)
+        text = text.mid(0, nul);
+
+    const size_t len = std::min(static_cast<size_t>(text.size()), static_cast<size_t>(outSize) - 1);
+    memcpy(out, text.data(), len);
+    out[len] = '\0';
+    return static_cast<int>(chunk.toUInt(0, false));
+}
+
 WavPropertiesResult wavAudioProperties(const char *path)
 {
     WavPropertiesResult result;

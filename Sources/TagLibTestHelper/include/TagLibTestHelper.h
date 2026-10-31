@@ -95,6 +95,19 @@ WavPropertiesResult wavAudioProperties(const char *path);
 /// Parses the RIFF header of the file at `path` directly, without going through TagLib.
 RiffHeaderInfo riffHeaderInfo(const char *path);
 
+// MARK: - WAV DISP
+
+/// Replaces the DISP chunks with one `CF_TEXT` chunk per entry of `texts`, each NUL-terminated;
+/// `count` 0 removes them. Returns true if the save succeeded.
+bool wavSetDISPTexts(const char *path, const char *const *texts, int count);
+
+/// The number of DISP chunks, or -1 if the file can't be opened.
+int wavDISPCount(const char *path);
+
+/// The text of DISP chunk `index` into `out`, without its format ID and NUL. Returns its format ID,
+/// or -1 if there is no such chunk.
+int wavDISPText(const char *path, int index, char *out, int outSize);
+
 // MARK: - RIFF INFO
 
 /// What `RIFF::Info::Tag::properties()` reports for a tag holding INAM = `title` and `fieldID`, an ID
