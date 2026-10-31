@@ -20,7 +20,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
-| RIFF INFO: under an assumed UTF-8 (`setAssumedCodePage(65001)`, no `CSET`), a field that isn't valid UTF-8 is read as ISO 8859-1 instead of as empty; a declared code page is never second-guessed | `c901643` | `riff/wav/infotag.cpp`, `riff/wav/infotag.h` | carried; PR not opened |
+| RIFF INFO: under an assumed UTF-8 (`setAssumedCodePage(65001)`, no `CSET`), a field that isn't valid UTF-8 is read as ISO 8859-1 instead of as empty; a declared code page is never second-guessed | `c901643` | `riff/wav/infotag.cpp`, `riff/wav/infotag.h` | PR #1480 open |
 | ID3v2 `setProperties` updates the one frame holding an edited key in place when its type can hold the new value, keeping a `COMM`/`USLT` language, a `TXXX` description's spelling, the frame's position and its stored encoding | `f4644d0` | `mpeg/id3v2/id3v2tag.cpp` | issue #1475 open; PR not opened |
 
 ## Structure
