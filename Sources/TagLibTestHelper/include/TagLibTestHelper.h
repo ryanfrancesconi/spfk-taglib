@@ -151,6 +151,17 @@ bool mkvSetPropertyAndAttach(const char *path, const char *key, const char *valu
 /// The number of attached files TagLib reads back, or -1 if the file is not valid.
 int mkvAttachedFileCount(const char *path);
 
+/// The audio properties TagLib reads; `sampleRate` is -1 if the file is not valid.
+typedef struct {
+    int sampleRate;
+    int channels;
+    int bitsPerSample;
+    /// UTF-8, truncated to 31 bytes.
+    char codecName[32];
+} MkvAudioProperties;
+
+MkvAudioProperties mkvAudioProperties(const char *path);
+
 /// The Segment's top-level elements, read straight from the file rather than through TagLib.
 typedef struct {
     /// Whether every top-level element in the Segment has a valid ID and size, and the last ends

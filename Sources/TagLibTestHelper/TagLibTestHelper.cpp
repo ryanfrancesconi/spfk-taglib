@@ -408,6 +408,26 @@ long long mkvReadProperty(const char *path, const char *key, char *out, long lon
     return data.size();
 }
 
+MkvAudioProperties mkvAudioProperties(const char *path)
+{
+    MkvAudioProperties result {};
+    result.sampleRate = -1;
+
+    Matroska::File file(path);
+    const Matroska::Properties *properties = file.isValid() ? file.audioProperties() : nullptr;
+    if(!properties)
+        return result;
+
+    result.sampleRate = properties->sampleRate();
+    result.channels = properties->channels();
+    result.bitsPerSample = properties->bitsPerSample();
+    const ByteVector codec = properties->codecName().data(String::UTF8);
+    const auto count = std::min<unsigned int>(codec.size(), sizeof(result.codecName) - 1);
+    std::memcpy(result.codecName, codec.data(), count);
+    result.codecName[count] = '\0';
+    return result;
+}
+
 bool mkvSetPropertyAndAttach(const char *path, const char *key, const char *value,
                              const void *data, unsigned int size, bool avoidInsert)
 {
