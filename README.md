@@ -21,6 +21,7 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
 | RIFF INFO: under an assumed UTF-8 (`setAssumedCodePage(65001)`, no `CSET`), a field that isn't valid UTF-8 is read as ISO 8859-1 instead of as empty; a declared code page is never second-guessed | `c901643` | `riff/wav/infotag.cpp`, `riff/wav/infotag.h` | PR #1480 open |
+| RIFF: only the audio chunk (`data`, `SSND`) is clamped to the end of the file, and its size is repaired before a chunk is appended after it; any other chunk running past the end, such as a trailing APEv2 tag, ends the chunk walk instead of swallowing chunks a save appends | `93f90e1` | `riff/rifffile.cpp` | carried; PR not opened |
 | ID3v2 `setProperties` updates the one frame holding an edited key in place when its type can hold the new value, keeping a `COMM`/`USLT` language, a `TXXX` description's spelling, the frame's position and its stored encoding | `f4644d0` | `mpeg/id3v2/id3v2tag.cpp` | PR #1481 open (issue #1475) |
 
 ## Structure
