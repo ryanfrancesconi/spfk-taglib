@@ -289,6 +289,18 @@ int base64Decode(const char *input, unsigned char *out, int outSize);
 /// comment is rendered and parsed again.
 int xiphWrappedPictureCount(bool wrapped, int *afterRender);
 
+// MARK: - MPEG
+
+/// What `MPEG::File` finds in the file at `path`: the first frame's offset, the end of the last
+/// frame, and the length in milliseconds. All three are -1 if the file can't be opened.
+typedef struct {
+    long long firstFrameOffset;
+    long long lastFrameOffset;
+    int lengthInMilliseconds;
+} MpegFrameLayout;
+
+MpegFrameLayout mpegFrameLayout(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

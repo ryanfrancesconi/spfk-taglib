@@ -14,6 +14,7 @@
 #include <taglib/matroskafile.h>
 #include <taglib/mp4chapter.h>
 #include <taglib/mp4file.h>
+#include <taglib/mpegfile.h>
 #include <taglib/tableofcontentsframe.h>
 #include <taglib/tbytevectorstream.h>
 #include <taglib/tdeferredwritestream.h>
@@ -1072,6 +1073,20 @@ int xiphWrappedPictureCount(bool wrapped, int *afterRender)
     Ogg::XiphComment reparsed(parsed.render(false));
     *afterRender = static_cast<int>(reparsed.pictureList().size());
     return static_cast<int>(parsed.pictureList().size());
+}
+
+MpegFrameLayout mpegFrameLayout(const char *path)
+{
+    MpegFrameLayout result { -1, -1, -1 };
+
+    MPEG::File file(path);
+    if(!file.isValid() || !file.audioProperties())
+        return result;
+
+    result.firstFrameOffset = file.firstFrameOffset();
+    result.lastFrameOffset = file.lastFrameOffset();
+    result.lengthInMilliseconds = file.audioProperties()->lengthInMilliseconds();
+    return result;
 }
 
 }  // extern "C"
