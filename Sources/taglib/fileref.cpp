@@ -38,7 +38,6 @@
 #include "tstringlist.h"
 #include "tvariant.h"
 #include "tdebug.h"
-#include "tagutils.h"
 #include "mpegfile.h"
 #ifdef TAGLIB_WITH_RIFF
 #include "aifffile.h"
@@ -95,46 +94,6 @@ class FileRef::StreamTypeResolver::StreamTypeResolverPrivate
 namespace
 {
   List<const FileRef::FileTypeResolver *> fileTypeResolvers;
-
-  File *detectByContent(IOStream *stream, bool readAudioProperties,
-                        AudioProperties::ReadStyle audioPropertiesStyle);
-
-  // MPEG has no signature of its own, so a file named as MPEG is checked for
-  // another container's signature instead, after any ID3v2 tag.
-
-  bool hasOtherContainerSignature(IOStream *stream)
-  {
-    static const ByteVector asfGuid("\x30\x26\xB2\x75\x8E\x66\xCF\x11\xA6\xD9\x00\xAA\x00\x62\xCE\x6C", 16);
-    const ByteVector id = Utils::readHeader(stream, 24, true);
-
-    // A WAVE holding MPEG audio is read as MPEG, which also finds tags
-    // appended after the RIFF data.
-    if(id.startsWith("RIFF") && id.containsAt("WAVE", 8) && id.containsAt("fmt ", 12)) {
-      const unsigned short format = id.toUShort(20, false);
-      if(format == 0x0050 || format == 0x0055)
-        return false;
-    }
-
-    return id.startsWith("RIFF") || id.startsWith("RF64") || id.startsWith("BW64") ||
-           id.startsWith("FORM") || id.containsAt("ftyp", 4) || id.startsWith("fLaC") ||
-           id.startsWith("OggS") || id.startsWith("\x1A\x45\xDF\xA3") || id.startsWith(asfGuid) ||
-           id.startsWith("MAC ") || id.startsWith("wvpk") || id.startsWith("TTA") ||
-           id.startsWith("MPCK") || id.startsWith("MP+") || id.startsWith("DSD ") ||
-           id.startsWith("FRM8") || id.startsWith("ajkg");
-  }
-
-  // The parsers for these formats accept content of another format as valid,
-  // so the content is tried first when the header rules the format out.
-
-  File *detectByContentIf(bool mismatch, IOStream *stream, bool readAudioProperties,
-                          AudioProperties::ReadStyle audioPropertiesStyle)
-  {
-    if(!mismatch)
-      return nullptr;
-    File *file = detectByContent(stream, readAudioProperties, audioPropertiesStyle);
-    stream->seek(0);
-    return file;
-  }
 
   // Detect the file type by user-defined resolvers.
 
@@ -197,11 +156,8 @@ namespace
 
     File *file = nullptr;
 
-    if(ext == "MP3" || ext == "MP2" || ext == "AAC") {
-      if(File *contentFile = detectByContentIf(hasOtherContainerSignature(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    if(ext == "MP3" || ext == "MP2" || ext == "AAC")
       file = new MPEG::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
 #ifdef TAGLIB_WITH_VORBIS
     else if(ext == "OGG")
       file = new Ogg::Vorbis::File(stream, readAudioProperties, audioPropertiesStyle);
@@ -221,28 +177,16 @@ namespace
       file = new Ogg::Opus::File(stream, readAudioProperties, audioPropertiesStyle);
 #endif
 #ifdef TAGLIB_WITH_APE
-    else if(ext == "MPC") {
-      if(File *contentFile = detectByContentIf(!MPC::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "MPC")
       file = new MPC::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
-    else if(ext == "WV") {
-      if(File *contentFile = detectByContentIf(!WavPack::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "WV")
       file = new WavPack::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
-    else if(ext == "APE") {
-      if(File *contentFile = detectByContentIf(!APE::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "APE")
       file = new APE::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
 #endif
 #ifdef TAGLIB_WITH_TRUEAUDIO
-    else if(ext == "TTA") {
-      if(File *contentFile = detectByContentIf(!TrueAudio::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "TTA")
       file = new TrueAudio::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
 #endif
 #ifdef TAGLIB_WITH_MP4
     else if(ext == "M4A" || ext == "M4R" || ext == "M4B" || ext == "M4P" || ext == "MP4" || ext == "3G2" || ext == "M4V")
@@ -253,16 +197,10 @@ namespace
       file = new ASF::File(stream, readAudioProperties, audioPropertiesStyle);
 #endif
 #ifdef TAGLIB_WITH_RIFF
-    else if(ext == "AIF" || ext == "AIFF" || ext == "AFC" || ext == "AIFC") {
-      if(File *contentFile = detectByContentIf(!RIFF::AIFF::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "AIF" || ext == "AIFF" || ext == "AFC" || ext == "AIFC")
       file = new RIFF::AIFF::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
-    else if(ext == "WAV") {
-      if(File *contentFile = detectByContentIf(!RIFF::WAV::File::isSupported(stream), stream, readAudioProperties, audioPropertiesStyle))
-        return contentFile;
+    else if(ext == "WAV")
       file = new RIFF::WAV::File(stream, readAudioProperties, audioPropertiesStyle);
-    }
 #endif
 #ifdef TAGLIB_WITH_MOD
     // module, nst and wow are possible but uncommon extensions
@@ -641,6 +579,7 @@ void FileRef::parse(FileName fileName, bool readAudioProperties,
     return;
 
   // At last, try to resolve file types based on the actual content.
+  // A parser tried for the extension may have left the stream anywhere.
 
   d->stream->seek(0);
   d->file = detectByContent(d->stream, readAudioProperties, audioPropertiesStyle);
@@ -675,6 +614,7 @@ void FileRef::parse(IOStream *stream, bool readAudioProperties,
     return;
 
   // At last, try to resolve file types based on the actual content of the file.
+  // A parser tried for the extension may have left the stream anywhere.
 
   stream->seek(0);
   d->file = detectByContent(stream, readAudioProperties, audioPropertiesStyle);
