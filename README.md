@@ -4,13 +4,23 @@
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-taglib%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/ryanfrancesconi/spfk-taglib)
 [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-taglib%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/ryanfrancesconi/spfk-taglib)
 
-[TagLib](https://taglib.org/) packaged for Swift Package Manager.
-
-## Overview
-
-spfk-taglib is an independent SPM repackaging of [taglib/taglib](https://github.com/taglib/taglib), the C++ audio metadata library. The source tree mirrors upstream TagLib's directory layout — headers live alongside their `.cpp` files in format-specific subdirectories — making syncs with upstream a straightforward directory-level diff.
+[TagLib](https://taglib.org/), the C++ audio metadata library, repackaged for Swift Package Manager.
+TagLib ships no SwiftPM manifest; this package vendors its source so that Swift projects can depend
+on it directly. Depend on the `taglib` product and import the `taglib` module from C++ or
+Objective-C++. Swift bindings are [SPFKMetadata](https://github.com/ryanfrancesconi/spfk-metadata).
 
 The current upstream base is **TagLib 2.3.2** (tracked via `SPFK_TAGLIB_UPSTREAM_VERSION` in `taglib_config.h`).
+
+The package has its own semantic versioning, independent of TagLib's version numbers.
+
+## Tracking upstream
+
+`Sources/taglib/` mirrors upstream's `taglib/` directory, headers beside their sources, so a sync is
+a bulk mirror rather than a per-file merge. Public headers reach SwiftPM through symlinks in
+`include/taglib/`, which `scripts/update-symlinks.sh` regenerates. A sync preserves the
+SwiftPM-specific paths and strips the build-system files. The mirror overwrites every change
+listed below: re-apply each one as its own commit and record that commit in the list. On a tagged
+upstream release, also bump `SPFK_TAGLIB_UPSTREAM_VERSION` and the version line above.
 
 ## Changes Not in Upstream
 
@@ -21,46 +31,6 @@ when a sync brings it back in from upstream, and stays if upstream declines it.
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
 | `FileRef`: a file whose content is another format than its extension names is read as what it is — the MPEG, MPC, WavPack, APE, TTA, AIFF and WAV branches check the header before parsing (for MPEG, another container's signature after any ID3v2 tag; a WAVE holding MPEG audio stays MPEG) and try content detection first on a mismatch. Approach from taglib PR #1305 (lepre-zhang), reworked to check before parsing | `a40ba55`; `4177ab7`, `e7df88c` | `fileref.cpp` | PR #1490 open (supersedes #1305, closes #1308); the rewind before content detection was merged as #1487 |
-
-## Structure
-
-Public headers are colocated with their implementations (matching upstream) and exposed to SPM via symlinks in `include/taglib/`. A `module.modulemap` defines the `taglib` module. Run `scripts/update-symlinks.sh` after adding or removing public headers.
-
-## Syncing with Upstream
-
-The directory layout mirrors upstream TagLib, so syncing is a bulk mirror of upstream's `taglib/` directory into `Sources/taglib/` via `rsync --delete`, preserving the SPM-specific paths (`include/`, `utfcpp/`, `toolkit/taglib_config.h`) and stripping build-system files (`CMakeLists.txt`, `*.cmake`, etc.).
-
-The mirror overwrites every change in [Changes Not in Upstream](#changes-not-in-upstream). Re-apply each one still listed after it, as its own commit, record that commit in the list, then run the tests.
-
-For new format modules introduced upstream, add the corresponding `headerSearchPath` entries to `Package.swift`, add public headers to `module.modulemap`, and run `scripts/update-symlinks.sh`.
-
-On tagged upstream releases, bump `SPFK_TAGLIB_UPSTREAM_VERSION` in `Sources/taglib/toolkit/taglib_config.h` and the version line in this README.
-
-## Versioning
-
-This package uses its own semantic versioning starting at `1.0.0`, independent of upstream TagLib version numbers. The upstream TagLib revision is tracked in `taglib_config.h`.
-
-## Installation
-
-Add to your `Package.swift`:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/ryanfrancesconi/spfk-taglib", from: "1.0.0"),
-],
-targets: [
-    .target(
-        name: "YourTarget",
-        dependencies: [
-            .product(name: "taglib", package: "spfk-taglib"),
-        ]
-    ),
-]
-```
-
-## Swift Bindings
-
-Swift bindings and higher-level metadata functionality are provided by [SPFKMetadata](https://github.com/ryanfrancesconi/spfk-metadata), which wraps spfk-taglib's C++ API in a native Swift interface.
 
 ## License
 
