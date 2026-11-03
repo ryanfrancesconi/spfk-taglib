@@ -28,9 +28,10 @@ upstream release, also bump `SPFK_TAGLIB_UPSTREAM_VERSION` and the version line 
 its own set of commits here and is offered to taglib/taglib as its own pull request; it leaves this list
 when a sync brings it back in from upstream, and stays if upstream declines it.
 
+None at present: `Sources/taglib/` is a plain mirror of upstream.
+
 | Change | Commits (original; latest re-apply) | Files | Upstream |
 | --- | --- | --- | --- |
-| `FileRef`: a file whose content is another format than its extension names is read as what it is — the MPEG, MPC, WavPack, APE, TTA, AIFF and WAV branches check the header before parsing (for MPEG, another container's signature after any ID3v2 tag; a WAVE holding MPEG audio stays MPEG) and try content detection first on a mismatch. Approach from taglib PR #1305 (lepre-zhang), reworked to check before parsing | `a40ba55`; `4177ab7`, `e7df88c` | `fileref.cpp` | PR #1490 open (supersedes #1305, closes #1308); the rewind before content detection was merged as #1487 |
 
 ## License
 

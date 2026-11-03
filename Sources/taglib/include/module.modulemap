@@ -86,6 +86,7 @@ module taglib {
 	header "taglib/trueaudioproperties.h"
 	header "taglib/rifffile.h"
 	header "taglib/aifffile.h"
+	header "taglib/aiffnativetag.h"
 	header "taglib/aiffproperties.h"
 	header "taglib/wavfile.h"
 	header "taglib/wavproperties.h"
