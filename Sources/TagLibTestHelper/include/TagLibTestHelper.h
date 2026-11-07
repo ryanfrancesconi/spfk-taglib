@@ -2,8 +2,7 @@
     copyright            : (C) 2026 by Ryan Francesconi
  **************************************************************************/
 
-#ifndef TAGLIB_TEST_HELPER_H
-#define TAGLIB_TEST_HELPER_H
+#pragma once
 
 #include <stdbool.h>
 
@@ -319,6 +318,4 @@ bool fileRefSetTitle(const char *path, const char *title);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif
