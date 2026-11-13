@@ -60,7 +60,7 @@ typedef struct {
 } WavPropertiesResult;
 
 /// The 32-bit size field at offset 4 plus the fixed `ds64` fields, read straight from
-/// the file rather than through TagLib — an independent check on what a write left behind.
+/// the file rather than through TagLib - an independent check on what a write left behind.
 typedef struct {
     /// Four-character magic at offset 0.
     char magic[5];

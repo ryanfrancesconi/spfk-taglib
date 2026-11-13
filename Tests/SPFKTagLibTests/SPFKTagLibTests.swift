@@ -125,7 +125,7 @@ final class MP4QTChapterTests {
         let path = try makeTempCopy()
         defer { try? FileManager.default.removeItem(atPath: path) }
 
-        // Markers at 1s, 2s, 3s — first chapter is NOT at time 0
+        // Markers at 1s, 2s, 3s - first chapter is NOT at time 0
         let times: [Int64] = [1000, 2000, 3000]
         let titles = ["One", "Two", "Three"]
         titles.withCStringArray { ptrs in
@@ -200,7 +200,7 @@ final class MP4QTChapterTests {
             #expect(qtChapterRemove(path))
         }
 
-        // After all cycles: mdat count must be unchanged — no orphans
+        // After all cycles: mdat count must be unchanged - no orphans
         #expect(countMdatAtoms(path) == baseMdat,
                 "Orphaned mdat atoms detected: remove did not clean up chapter mdat")
     }
@@ -258,7 +258,7 @@ final class MP4QTChapterTests {
     // MARK: - Empty title at t=0 is stripped (documented limitation)
     //
     // When writing two or more chapters with an empty-title first chapter at t=0,
-    // read() strips it — it's indistinguishable from the dummy chapter inserted
+    // read() strips it - it's indistinguishable from the dummy chapter inserted
     // by write() to preserve non-zero start times.
     // Single-chapter case is NOT stripped (only 1 chapter, stripping would leave empty list).
 

@@ -7,10 +7,10 @@ import Testing
 /// RF64 and BW64 are the long forms of WAVE, used past 4 GB: the 32-bit size fields hold a
 /// `0xFFFFFFFF` sentinel and a leading `ds64` chunk carries the real sizes. Writing a real
 /// number into the sentinel makes readers stop consulting `ds64`, which past 4 GB is the only
-/// place the size fits — so the file's audio is lost even though every byte is still on disk.
+/// place the size fits - so the file's audio is lost even though every byte is still on disk.
 ///
 /// The bundled fixture is 50 ms, which is enough: the detection failure and the sentinel
-/// overwrite are the same code at any size. Verified against a 4.8 GB RF64 as well —
+/// overwrite are the same code at any size. Verified against a 4.8 GB RF64 as well -
 /// Core Audio reports 25000.000000 sec and 4,800,000,000 audio bytes after a tag write.
 @Suite
 final class RF64Tests {
@@ -118,7 +118,7 @@ final class RF64Tests {
         #expect(after.riffSize == after.fileSize - 8)
     }
 
-    /// A file an older TagLib damaged carries a real 32-bit total where the sentinel belongs —
+    /// A file an older TagLib damaged carries a real 32-bit total where the sentinel belongs -
     /// past 4 GB a truncated one, which is what makes readers report milliseconds for hours of
     /// audio. The value is malformed in a long-form file whatever its size, so a save writes the
     /// sentinel back and the file reads correctly again everywhere.
@@ -164,7 +164,7 @@ final class RF64Tests {
     }
 
     /// A duration that moves across a tag write means the reader is measuring the audio with
-    /// the tag chunks included — the shape the sentinel produces when `ds64` is ignored.
+    /// the tag chunks included - the shape the sentinel produces when `ds64` is ignored.
     @Test func durationSurvivesATagWrite() throws {
         let path = try makeCopy()
         defer { try? FileManager.default.removeItem(atPath: path) }
